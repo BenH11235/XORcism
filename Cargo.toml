@@ -1,0 +1,8 @@
+[package]
+name = "xorism"
+version = "0.1.0"
+authors = ["ben"]
+
+[dependencies]
+itertools = "0.7.3"
+counter = "0.4.3"
