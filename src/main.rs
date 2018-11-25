@@ -29,7 +29,7 @@ mod crypto {
     }
     
     pub mod vigenere {
-        
+        use std::iter::once;
         use utils::{shred,Iter,Average,fcmp};
         use std::cmp::Ordering;
         use std::hash::Hash;
@@ -52,14 +52,14 @@ mod crypto {
         <IMG:Clone+Ord+Hash,KEYCHAR:Clone+Ord+Hash>
         (pt:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
-            transform(pt,key,comb)
+            transform(&pt,&key,&comb)
         }
 
         pub fn decrypt
         <IMG:Clone+Ord+Hash,KEYCHAR:Clone+Ord+Hash>
         (ct:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
-            transform(ct,key,comb)
+            transform(&ct,&key,&comb)
         }
 
         pub fn key_len_score<IMG:Clone+Ord+Hash>(ct:&Vec<IMG>,n:&usize) -> f64 {
@@ -88,6 +88,30 @@ mod crypto {
             }).unwrap()
         }
 
+ 
+        pub fn simple_xor_break<'a,IMG,KEYCHAR> (   
+        ct:         &       Vec<IMG>,
+        ptspace:    &       Distribution<IMG>,
+        keyspace:   &'a     Distribution<KEYCHAR>, 
+        comb:       &       impl Fn(&IMG,&KEYCHAR) -> IMG)   
+        ->          (&'a KEYCHAR, Vec<IMG>)
+        where
+        IMG:        Clone+Ord+Hash,
+        KEYCHAR:    Clone+Ord+Hash {
+            keyspace
+            .outcomes()
+            .into_iter()
+            .map(|k| { 
+                let kv:Vec<KEYCHAR> = once(k).cloned().collect(); 
+                (k,decrypt(&ct, &kv, &comb))
+            })
+            .min_by(|(k1,c1),(k2,c2)| {
+                let sup1 = ptspace.surprise(c1);
+                let sup2 = ptspace.surprise(c2);
+                fcmp(&sup1,&sup2).unwrap()
+            }).unwrap()
+        }
+
     }
 }
 
@@ -102,10 +126,17 @@ mod dist {
     use counter::Counter;
 
     pub trait Distribution<IMG:Eq+Hash+Clone> {
-        fn outcomes(&self) -> &HashMap<IMG,f64>;
+        fn probabilities(&self) -> &HashMap<IMG,f64>;
+
+        fn outcomes(&self) -> Vec<&IMG> {
+            self.probabilities()
+            .iter()
+            .map(|(x,p)| x)
+            .collect()
+        }
 
         fn index_of_coincidence(&self) -> f64 {
-            self.outcomes().iter().map(|(_,p)| p.powf(2.0)).sum()
+            self.probabilities().iter().map(|(_,p)| p.powf(2.0)).sum()
         }
 
         //fn pointwise(&self, f: Fn(IMG)->IMG) -> impl Distribution {
@@ -114,9 +145,8 @@ mod dist {
             events
             .iter()
             .map(|e| 
-                self.outcomes()
-                .get(e)
-                .unwrap()
+                self.probabilities()
+                .get(e).unwrap()
             ).fold(0.0, |a,b:&f64| a+b.recip().log(2.0))
         }
     }
@@ -124,7 +154,7 @@ mod dist {
 
     pub fn from_vector<IMG:Eq+Hash+Clone>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
         _Distribution {
-            outcomes : v.into_iter().collect::<HashMap<IMG,f64>>()
+            probabilities : v.into_iter().collect::<HashMap<IMG,f64>>()
         }
     }
  
@@ -148,12 +178,12 @@ mod dist {
     }
     
     struct _Distribution<IMG> {
-        outcomes : HashMap<IMG,f64>
+        probabilities : HashMap<IMG,f64>
     }
     
     impl<IMG> Distribution<IMG> for _Distribution<IMG> where IMG:Eq+Hash+Clone {
-        fn outcomes(&self) -> &HashMap<IMG,f64> {
-            &self.outcomes
+        fn probabilities(&self) -> &HashMap<IMG,f64> {
+            &self.probabilities
         }
     }
 }
@@ -219,7 +249,6 @@ mod utils {
         (result-target).abs() / result < 0.001
     }
 
-    //Fools rush in where angels fear to tread -- Alexander Pope
     pub fn fcmp(x:&f64,y:&f64) -> Option<Ordering> {
         if x.is_nan() || y.is_nan() {
             None
@@ -231,6 +260,21 @@ mod utils {
             Some(Ordering::Equal)
         }
     }
+
+    /*
+
+    pub trait MinByKeyF<T,KEY> {
+        fn min_by_key_f(&self, KEY) -> T; 
+    }
+
+    impl<T,TV,KEY> MinByKeyF<T> for TV {
+        fn min_by_float(&self, f:KEY) -> T 
+        where 
+        Key: Fn(T) -> f64,
+
+
+        */
+
 }
 
 
@@ -280,7 +324,7 @@ mod tests {
         let computed_dist = dist::from_sample(&samples);
         assert!(
             utils::approx_equal(
-                computed_dist.outcomes().get(&4).unwrap(),
+                computed_dist.probabilities().get(&4).unwrap(),
                 &0.4
             )
         )
@@ -307,10 +351,10 @@ mod tests {
         let pt:Vec<char> = (0..80).map(|_| 'A').collect();        
         let key = vec!['i', 'a', 'm', 'a', 'k', 'e', 'y'];
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
-        let g_klen = vigenere::guess_key_length(ct);
+        let g_klen = vigenere::guess_key_length(&ct);
         assert_eq!(g_klen, key.len());
     }
-
+    
 }
 
 fn main() {
