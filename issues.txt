@@ -1,0 +1,6 @@
+* Remove all the unwraps
+
+* Replace raw index of coincidence with modeling as bernoulli variable, which can naturally account for length of block vs number of coincidences
+
+* Replace all output vectors with impl iters
+

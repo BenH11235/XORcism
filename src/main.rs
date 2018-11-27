@@ -30,7 +30,8 @@ mod crypto {
     
     pub mod vigenere {
         use std::iter::once;
-        use utils::{shred,Iter,Average,fcmp};
+        use itertools::iterate;
+        use utils::{shred,Iter,Average,fcmp,FMax};
         use std::cmp::Ordering;
         use std::hash::Hash;
         use dist;
@@ -73,7 +74,18 @@ mod crypto {
                 ).collect();
             indices_of_coincidence.iter().average()
         }
+        pub fn guess_key_length<IMG:Clone+Ord+Hash>(ct:&Vec<IMG>) -> usize {
+            let max_checked_len = (ct.len() as f64 / 5.0).floor() as usize;
+            iterate(1, |keylen| keylen+1)
+            .take_while(|&keylen| keylen < max_checked_len)
+            .collect::<Vec<usize>>().iter() //TODO: Get rid of this
+            .fmax(&|keylen:&usize| key_len_score(&ct,keylen))
+            .clone()
+        }
 
+
+
+        /*
         pub fn guess_key_length<IMG:Clone+Ord+Hash>(ct:&Vec<IMG>) -> usize {
             let max_checked_keylen = (ct.len() as f64 / 5.0).floor() as usize;
             (1_usize..=max_checked_keylen)
@@ -83,10 +95,12 @@ mod crypto {
                     if score1 == score2 {
                         Ordering::Greater //shorter key size breaks tie
                     } else {
-                        fcmp(&score1,&score2).unwrap()
+                        fcmp(&score1,&score2)
                     }
             }).unwrap()
         }
+        */
+
 
  
         pub fn simple_xor_break<'a,IMG,KEYCHAR> (   
@@ -108,7 +122,7 @@ mod crypto {
             .min_by(|(k1,c1),(k2,c2)| {
                 let sup1 = ptspace.surprise(c1);
                 let sup2 = ptspace.surprise(c2);
-                fcmp(&sup1,&sup2).unwrap()
+                fcmp(&sup1,&sup2)
             }).unwrap()
         }
 
@@ -192,7 +206,7 @@ mod utils {
     use std::marker::Sized;
     use std::ops::{Add,Div,Mul};
     use std::iter::Sum;
-    use itertools::Itertools;
+    use itertools::{iterate};
     use std::cmp::Ordering;
 
         
@@ -223,8 +237,7 @@ mod utils {
 
     impl<'a,T:'a,TV> Average<T> for TV
     where   TV:Iter<&'a T>+Clone,
-            T:Copy+Vector
-    {
+            T:Copy+Vector {
         fn average(&self) -> T {
             let (sum,len) = self.clone().fold(
                 (T::from(0.0),0.0), 
@@ -233,9 +246,11 @@ mod utils {
             sum / len
         }
     }
-
+    
+    //reimplement using itertools step
     pub fn shred<'a,X:'a>(s: impl Iter<&'a X>, m: usize) -> Vec<impl Iter<&'a X>> {
-        (0..m)
+        iterate(0, |x| x+1)
+        .take(m)
         .map(|r|
             s
             .clone()
@@ -249,56 +264,65 @@ mod utils {
         (result-target).abs() / result < 0.001
     }
 
-    pub fn fcmp(x:&f64,y:&f64) -> Option<Ordering> {
+
+    pub fn fcmp(x:&f64,y:&f64) -> Ordering {
         if x.is_nan() || y.is_nan() {
-            None
+            panic!("Encountered NaN while comparing floats");
         } else if x>y {
-            Some(Ordering::Greater)
+            Ordering::Greater
         } else if y>x {
-            Some(Ordering::Less)
+            Ordering::Less
         } else {
-            Some(Ordering::Equal)
+            Ordering::Equal
         }
     }
 
-    /*
-
-    pub trait MinByKeyF<T,KEY> {
-        fn min_by_key_f(&self, KEY) -> T; 
+    pub trait FMax<'a,T:'a> {
+        fn fmax(&'a self, &Fn(&T)->f64) -> &'a T; 
     }
 
-    impl<T,TV,KEY> MinByKeyF<T> for TV {
-        fn min_by_float(&self, f:KEY) -> T 
-        where 
-        Key: Fn(T) -> f64,
-
-
-        */
-
+    impl<'a,T:'a,TV> FMax<'a,T> for TV
+    where   TV:Iter<&'a T>+Clone {
+        fn fmax(&'a self, f:&Fn(&T)->f64) -> &'a T {
+            self
+            .clone()
+            .max_by(|x1,x2| {
+                let (f1, f2) = (f(x1),f(x2));
+                if f1 == f2 {
+                    Ordering::Greater //default to earlier element in case of tie
+                } else {
+                    fcmp(&f1,&f2)
+                }
+            }).unwrap() //Panic on NaNs
+        }
+    }
 }
+
 
 
 
 #[cfg(test)]
 mod tests {
     use utils;
-    use utils::Average;
+    use utils::{Average,FMax};
     use dist;
     use dist::Distribution;
     use crypto;
     use crypto::{vigenere,chrxor};
-    use itertools::assert_equal;
+    use itertools::{assert_equal,repeat,iterate};
     
     #[test]
     fn shred_test() {
         let shreds1:Vec<Vec<u32>> = 
-            (0..3)
+            iterate(0, |x| x+1)
+            .take(3)
             .map(|r| 
-                 (0..10)
+                 iterate(0, |x| x+1)
+                 .take(10)
                  .map(|x| 3*x+r)
                  .collect()
             ).collect();
-        let v:Vec<u32> = (0..30).collect();
+        let v:Vec<u32> = iterate(0, |x| x+1).take(30).collect();
         let shreds2:Vec<Vec<u32>> =
             utils::shred(v.iter(),3)
             .into_iter()
@@ -309,7 +333,7 @@ mod tests {
 
     #[test]
     fn coincidence_test() {
-        let ud = dist::uniform((0..10).collect());
+        let ud = dist::uniform(iterate(0, |x| x+1).take(10).collect());
         assert!(
             utils::approx_equal(
                 &ud.index_of_coincidence(),
@@ -320,7 +344,11 @@ mod tests {
 
     #[test]
     fn get_dist_from_sample_test() {
-        let samples:Vec<i32> = (0..30).map(|x| (x*x) % 5).collect();
+        let samples:Vec<i32> = 
+            iterate(0, |x| x+1)
+            .take(30)
+            .map(|x| (x*x) % 5)
+            .collect();
         let computed_dist = dist::from_sample(&samples);
         assert!(
             utils::approx_equal(
@@ -332,9 +360,21 @@ mod tests {
 
     #[test]
     fn average_test() {
-        let v:Vec<f64> = (0..10).map(|x| x as f64).collect();
+        let v:Vec<f64> = iterate(0 as f64,|x| x+1).take(10).collect();
         let ave = v.iter().average();
         assert_eq!(ave,4.5);
+    }
+
+    #[test]
+    fn fmax_test() {
+        struct Blorb {x:i32,y:i32};
+        fn skeeve(b: &Blorb) -> f64 {
+            (b.x as f64) / (b.y as f64)
+        }
+        let v:Vec<Blorb> = vec![Blorb{x:2,y:2},Blorb{x:2,y:1},Blorb{x:10,y:7}];
+        let vit = v.iter();
+        let chosen = vit.fmax(&skeeve);
+        assert_eq!(chosen.x + chosen.y, 3);
     }
 
     #[test]
@@ -348,7 +388,7 @@ mod tests {
 
     #[test]
     fn guess_keylen_test() {
-        let pt:Vec<char> = (0..80).map(|_| 'A').collect();        
+        let pt:Vec<char> = repeat('A').take(80).collect();        
         let key = vec!['i', 'a', 'm', 'a', 'k', 'e', 'y'];
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let g_klen = vigenere::guess_key_length(&ct);
