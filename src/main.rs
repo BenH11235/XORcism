@@ -309,7 +309,8 @@ mod tests {
     use dist::Distribution;
     use crypto;
     use crypto::{vigenere,chrxor};
-    use itertools::{assert_equal,repeat,iterate};
+    use std::iter::repeat;
+    use itertools::{assert_equal,iterate};
     
     #[test]
     fn shred_test() {
@@ -360,7 +361,7 @@ mod tests {
 
     #[test]
     fn average_test() {
-        let v:Vec<f64> = iterate(0 as f64,|x| x+1).take(10).collect();
+        let v:Vec<f64> = iterate(0 as f64,|x| x+1.0).take(10).collect();
         let ave = v.iter().average();
         assert_eq!(ave,4.5);
     }
