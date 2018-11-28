@@ -83,23 +83,15 @@ mod crypto {
             .clone()
         }
 
-
-
-        /*
-        pub fn guess_key_length<IMG:Clone+Ord+Hash>(ct:&Vec<IMG>) -> usize {
-            let max_checked_keylen = (ct.len() as f64 / 5.0).floor() as usize;
-            (1_usize..=max_checked_keylen)
-            .max_by(|i1,i2| {
-                    let score1 = key_len_score(ct,i1);
-                    let score2 = key_len_score(ct,i2);
-                    if score1 == score2 {
-                        Ordering::Greater //shorter key size breaks tie
-                    } else {
-                        fcmp(&score1,&score2)
-                    }
-            }).unwrap()
+        fn surprisecmp(sup1:&Result<f64,String>,sup2:&Result<f64,String>) 
+        -> Ordering {
+            match (sup1,sup2) {
+                    (Ok(x1), Ok(x2)) => fcmp(&x1,&x2),
+                    (Err(_), Ok(x2)) => Ordering::Greater,
+                    (Ok(x1), Err(_)) => Ordering::Less,
+                    (Err(_), Err(_)) => Ordering::Equal
+                }
         }
-        */
 
 
  
@@ -108,7 +100,7 @@ mod crypto {
         ptspace:    &       Distribution<IMG>,
         keyspace:   &'a     Distribution<KEYCHAR>, 
         comb:       &       impl Fn(&IMG,&KEYCHAR) -> IMG)   
-        ->          (&'a KEYCHAR, Vec<IMG>)
+        ->          Result<(&'a KEYCHAR, Vec<IMG>),String>
         where
         IMG:        Clone+Ord+Hash,
         KEYCHAR:    Clone+Ord+Hash {
@@ -118,12 +110,9 @@ mod crypto {
             .map(|k| { 
                 let kv:Vec<KEYCHAR> = once(k).cloned().collect(); 
                 (k,decrypt(&ct, &kv, &comb))
-            })
-            .min_by(|(k1,c1),(k2,c2)| {
-                let sup1 = ptspace.surprise(c1);
-                let sup2 = ptspace.surprise(c2);
-                fcmp(&sup1,&sup2)
-            }).unwrap()
+            }).min_by(|(k1,c1),(k2,c2)| 
+                surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
+            ).ok_or(String::from("Invoked simple xor break with empty keyspace"))
         }
 
     }
@@ -136,8 +125,11 @@ mod dist {
     use std::hash::*;
     use std::collections::*;
     use std::iter::*;
+    use itertools::Itertools;
     use utils::Iter;
     use counter::Counter;
+
+    type DistException = String;
 
     pub trait Distribution<IMG:Eq+Hash+Clone> {
         fn probabilities(&self) -> &HashMap<IMG,f64>;
@@ -155,13 +147,14 @@ mod dist {
 
         //fn pointwise(&self, f: Fn(IMG)->IMG) -> impl Distribution {
         //}
-        fn surprise(&self, events:&Vec<IMG>) -> f64 {
+        fn surprise(&self, events:&Vec<IMG>) -> Result<f64,String> {
             events
             .iter()
             .map(|e| 
                 self.probabilities()
-                .get(e).unwrap()
-            ).fold(0.0, |a,b:&f64| a+b.recip().log(2.0))
+                .get(e)
+            ).fold_options(0.0, |a,b:&f64| a+b.recip().log(2.0))
+            .ok_or(String::from("Encountered Infinitely surprising event"))
         }
     }
     
@@ -177,8 +170,8 @@ mod dist {
         from_vector( 
             v
             .iter()
-            .cloned()
-            .collect::<Counter<_>>()
+            .cloned() //cannot construct counter from &IMG items
+            .collect::<Counter<IMG>>()
             .most_common_ordered()
             .into_iter()
             .map(|(x,n)| (x,(n as f64)/N))
@@ -206,7 +199,7 @@ mod utils {
     use std::marker::Sized;
     use std::ops::{Add,Div,Mul};
     use std::iter::Sum;
-    use itertools::{iterate};
+    use itertools::{Itertools,iterate};
     use std::cmp::Ordering;
 
         
@@ -239,26 +232,31 @@ mod utils {
     where   TV:Iter<&'a T>+Clone,
             T:Copy+Vector {
         fn average(&self) -> T {
-            let (sum,len) = self.clone().fold(
-                (T::from(0.0),0.0), 
-                |(cur_sum,cur_len),&summand| (cur_sum+summand,cur_len+1.0)
-            );
+            let (sum,len) = 
+                self
+                .clone() //Don't want to exhaust the iterator here
+                .fold(
+                    (T::from(0.0),0.0), 
+                    |(cur_sum,cur_len),&next| (cur_sum+next,cur_len+1.0)
+                );
             sum / len
         }
     }
-    
-    //reimplement using itertools step
+
+    //Change into trait so we can v.shreds(3)
+    //Maybe a more descriptive name?
     pub fn shred<'a,X:'a>(s: impl Iter<&'a X>, m: usize) -> Vec<impl Iter<&'a X>> {
-        iterate(0, |x| x+1)
+        iterate(0, |i| i+1)
         .take(m)
-        .map(|r|
+        .map(|r| 
             s
-            .clone()
-            .enumerate()
-            .filter(move |(n,_)| (n % m) == r)
-            .map(|(_,x)| x)
+            .clone() //Need to construct m iterators from one
+            .dropping(r)
+            .step(m)
         ).collect()
     }
+
+    
         
     pub fn approx_equal(target:&f64,result:&f64) -> bool {
         (result-target).abs() / result < 0.001
@@ -282,10 +280,10 @@ mod utils {
     }
 
     impl<'a,T:'a,TV> FMax<'a,T> for TV
-    where   TV:Iter<&'a T>+Clone {
+    where TV: Iter<&'a T>+Clone {
         fn fmax(&'a self, f:&Fn(&T)->f64) -> &'a T {
             self
-            .clone()
+            .clone() //Don't want to exhaust the iterator
             .max_by(|x1,x2| {
                 let (f1, f2) = (f(x1),f(x2));
                 if f1 == f2 {
