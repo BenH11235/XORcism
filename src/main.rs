@@ -123,6 +123,8 @@ pub mod dist {
     mod err {
         pub const INFINITE_SURPRISE:&str = 
             "Encountered infinitely surprising event";
+        pub const UNEXPECTED_ERROR:&str =
+            "A function returned an unexpected error.";
     }
 
 
@@ -159,11 +161,13 @@ pub mod dist {
 
     pub fn surprisecmp(sup1:&Result<f64,&str>,sup2:&Result<f64,&str>) 
     -> Ordering {
+        use self::err::{INFINITE_SURPRISE, UNEXPECTED_ERROR};
         match (sup1,sup2) {
             (Ok(x1), Ok(x2)) => fcmp(&x1,&x2),
-            (Err(_), Ok(_x2)) => Ordering::Greater,
-            (Ok(_x1), Err(_)) => Ordering::Less,
-            (Err(_), Err(_)) => Ordering::Equal
+            (Err(INFINITE_SURPRISE), Ok(_x2)) => Ordering::Greater,
+            (Ok(_x1), Err(INFINITE_SURPRISE)) => Ordering::Less,
+            (Err(INFINITE_SURPRISE), Err(INFINITE_SURPRISE)) => Ordering::Equal,
+            _ => panic!(UNEXPECTED_ERROR) 
         }
     }
 
