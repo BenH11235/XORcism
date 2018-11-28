@@ -82,18 +82,6 @@ mod crypto {
             .fmax(&|keylen:&usize| key_len_score(&ct,keylen))
             .clone()
         }
-
-        fn surprisecmp(sup1:&Result<f64,String>,sup2:&Result<f64,String>) 
-        -> Ordering {
-            match (sup1,sup2) {
-                    (Ok(x1), Ok(x2)) => fcmp(&x1,&x2),
-                    (Err(_), Ok(x2)) => Ordering::Greater,
-                    (Ok(x1), Err(_)) => Ordering::Less,
-                    (Err(_), Err(_)) => Ordering::Equal
-                }
-        }
-
-
  
         pub fn simple_xor_break<'a,IMG,KEYCHAR> (   
         ct:         &       Vec<IMG>,
@@ -111,7 +99,7 @@ mod crypto {
                 let kv:Vec<KEYCHAR> = once(k).cloned().collect(); 
                 (k,decrypt(&ct, &kv, &comb))
             }).min_by(|(k1,c1),(k2,c2)| 
-                surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
+                dist::surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
             ).ok_or(String::from("Invoked simple xor break with empty keyspace"))
         }
 
@@ -126,7 +114,7 @@ mod dist {
     use std::collections::*;
     use std::iter::*;
     use itertools::Itertools;
-    use utils::Iter;
+    use utils::{Iter,fcmp};
     use counter::Counter;
 
     type DistException = String;
@@ -156,8 +144,19 @@ mod dist {
             ).fold_options(0.0, |a,b:&f64| a+b.recip().log(2.0))
             .ok_or(String::from("Encountered Infinitely surprising event"))
         }
+
+
     }
-    
+
+    pub fn surprisecmp(sup1:&Result<f64,String>,sup2:&Result<f64,String>) 
+    -> Ordering {
+        match (sup1,sup2) {
+            (Ok(x1), Ok(x2)) => fcmp(&x1,&x2),
+            (Err(_), Ok(x2)) => Ordering::Greater,
+            (Ok(x1), Err(_)) => Ordering::Less,
+            (Err(_), Err(_)) => Ordering::Equal
+        }
+    }
 
     pub fn from_vector<IMG:Eq+Hash+Clone>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
         _Distribution {
@@ -183,6 +182,9 @@ mod dist {
         let p = (v.len() as f64).recip();
         from_vector(v.into_iter().zip(repeat(p)).collect())
     }
+
+
+
     
     struct _Distribution<IMG> {
         probabilities : HashMap<IMG,f64>
