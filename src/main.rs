@@ -16,7 +16,7 @@ ptd: impl Distribution<G>
 
 //TODO: Add error handling for case of infinite surprise
 
-mod crypto {
+pub mod crypto {
     
     pub fn chrxor(c1:&char, c2:&char) -> char {
         ((*c1 as u8) ^ (*c2 as u8)) as char
@@ -31,8 +31,7 @@ mod crypto {
     pub mod vigenere {
         use std::iter::once;
         use itertools::iterate;
-        use utils::{shred,Iter,Average,fcmp,FMax};
-        use std::cmp::Ordering;
+        use utils::{shred,Average,FMax};
         use std::hash::Hash;
         use dist;
         use dist::Distribution;
@@ -102,7 +101,7 @@ mod crypto {
             .map(|k| { 
                 let kv:Vec<KEYCHAR> = once(k).cloned().collect(); 
                 (k,decrypt(&ct, &kv, &comb))
-            }).min_by(|(k1,c1),(k2,c2)| 
+            }).min_by(|(_,c1),(_,c2)| 
                 dist::surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
             ).ok_or(err::EMPTY_KEYSPACE)
         }
@@ -111,14 +110,14 @@ mod crypto {
 }
 
 
-mod dist {
+pub mod dist {
     use std::clone::*;
     use std::cmp::*;
     use std::hash::*;
     use std::collections::*;
     use std::iter::*;
     use itertools::Itertools;
-    use utils::{Iter,fcmp};
+    use utils::fcmp;
     use counter::Counter;
 
     mod err {
@@ -133,7 +132,7 @@ mod dist {
         fn outcomes(&self) -> Vec<&IMG> {
             self.probabilities()
             .iter()
-            .map(|(x,p)| x)
+            .map(|(x,_p)| x)
             .collect()
         }
 
@@ -162,8 +161,8 @@ mod dist {
     -> Ordering {
         match (sup1,sup2) {
             (Ok(x1), Ok(x2)) => fcmp(&x1,&x2),
-            (Err(_), Ok(x2)) => Ordering::Greater,
-            (Ok(x1), Err(_)) => Ordering::Less,
+            (Err(_), Ok(_x2)) => Ordering::Greater,
+            (Ok(_x1), Err(_)) => Ordering::Less,
             (Err(_), Err(_)) => Ordering::Equal
         }
     }
@@ -175,7 +174,6 @@ mod dist {
     }
  
     pub fn from_sample<IMG:Eq+Hash+Clone+Ord>(v:&Vec<IMG>) -> impl Distribution<IMG> {
-        let N = v.len() as f64;
         from_vector( 
             v
             .iter()
@@ -183,8 +181,10 @@ mod dist {
             .collect::<Counter<IMG>>()
             .most_common_ordered()
             .into_iter()
-            .map(|(x,n)| (x,(n as f64)/N))
-            .collect()
+            .map(|(x,count)| (
+                x,
+                count as f64 / v.len() as f64
+            )).collect()
         )
     }
 
@@ -206,9 +206,7 @@ mod dist {
 }
 
 mod utils {
-    use std::marker::Sized;
     use std::ops::{Add,Div,Mul};
-    use std::iter::Sum;
     use itertools::{Itertools,iterate};
     use std::cmp::Ordering;
 
@@ -267,7 +265,7 @@ mod utils {
     }
 
     
-        
+    #[allow(dead_code)]    
     pub fn approx_equal(target:&f64,result:&f64) -> bool {
         (result-target).abs() / result < 0.001
     }
