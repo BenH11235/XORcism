@@ -36,6 +36,10 @@ mod crypto {
         use std::hash::Hash;
         use dist;
         use dist::Distribution;
+
+        mod err {
+            pub const EMPTY_KEYSPACE:&str = "Encountered Empty Keyspace";
+        }
         
         pub fn transform
         <IMG:Clone+Ord+Hash,KEYCHAR:Clone+Ord+Hash>
@@ -88,7 +92,7 @@ mod crypto {
         ptspace:    &       Distribution<IMG>,
         keyspace:   &'a     Distribution<KEYCHAR>, 
         comb:       &       impl Fn(&IMG,&KEYCHAR) -> IMG)   
-        ->          Result<(&'a KEYCHAR, Vec<IMG>),String>
+        ->          Result<(&'a KEYCHAR, Vec<IMG>),&'static str>
         where
         IMG:        Clone+Ord+Hash,
         KEYCHAR:    Clone+Ord+Hash {
@@ -100,7 +104,7 @@ mod crypto {
                 (k,decrypt(&ct, &kv, &comb))
             }).min_by(|(k1,c1),(k2,c2)| 
                 dist::surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
-            ).ok_or(String::from("Invoked simple xor break with empty keyspace"))
+            ).ok_or(err::EMPTY_KEYSPACE)
         }
 
     }
@@ -117,7 +121,11 @@ mod dist {
     use utils::{Iter,fcmp};
     use counter::Counter;
 
-    type DistException = String;
+    mod err {
+        pub const INFINITE_SURPRISE:&str = 
+            "Encountered infinitely surprising event";
+    }
+
 
     pub trait Distribution<IMG:Eq+Hash+Clone> {
         fn probabilities(&self) -> &HashMap<IMG,f64>;
@@ -135,20 +143,22 @@ mod dist {
 
         //fn pointwise(&self, f: Fn(IMG)->IMG) -> impl Distribution {
         //}
-        fn surprise(&self, events:&Vec<IMG>) -> Result<f64,String> {
+        fn surprise(&self, events:&Vec<IMG>) -> Result<f64,&'static str> {
             events
             .iter()
             .map(|e| 
                 self.probabilities()
                 .get(e)
             ).fold_options(0.0, |a,b:&f64| a+b.recip().log(2.0))
-            .ok_or(String::from("Encountered Infinitely surprising event"))
+            .ok_or(err::INFINITE_SURPRISE)
         }
 
 
     }
 
-    pub fn surprisecmp(sup1:&Result<f64,String>,sup2:&Result<f64,String>) 
+
+
+    pub fn surprisecmp(sup1:&Result<f64,&str>,sup2:&Result<f64,&str>) 
     -> Ordering {
         match (sup1,sup2) {
             (Ok(x1), Ok(x2)) => fcmp(&x1,&x2),
