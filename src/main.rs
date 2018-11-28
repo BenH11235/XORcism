@@ -169,7 +169,7 @@ mod dist {
         from_vector( 
             v
             .iter()
-            .cloned() //cannot construct counter from &IMG items
+            .cloned() //else we get a Counter<&IMG>
             .collect::<Counter<IMG>>()
             .most_common_ordered()
             .into_iter()
@@ -182,8 +182,6 @@ mod dist {
         let p = (v.len() as f64).recip();
         from_vector(v.into_iter().zip(repeat(p)).collect())
     }
-
-
 
     
     struct _Distribution<IMG> {
