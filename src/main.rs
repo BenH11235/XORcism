@@ -210,9 +210,9 @@ pub mod dist {
         }
     }
 
-    mod known {
+    pub mod known {
 
-        const SHAKESPEARE_PROBS:[(char,f64);91] = [
+        pub const SHAKESPEARE:[(char,f64);91] = [
             (' ', 0.23706244495666062),
             ('e', 0.0741308625793966),
             ('t', 0.053126498319317414),
