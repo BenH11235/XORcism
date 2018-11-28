@@ -173,14 +173,14 @@ pub mod dist {
 
     //Maybe impl these as From<T> trait?
 
-    pub fn from_vector<IMG:Eq+Hash+Clone>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
+    pub fn from<IMG:Eq+Hash+Clone>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
         _Distribution {
             probabilities : v.into_iter().collect::<HashMap<IMG,f64>>()
         }
     }
  
     pub fn from_sample<IMG:Eq+Hash+Clone+Ord>(v:&Vec<IMG>) -> impl Distribution<IMG> {
-        from_vector( 
+        from( 
             v
             .iter()
             .cloned() //else we get a Counter<&IMG>
@@ -196,7 +196,7 @@ pub mod dist {
 
     pub fn uniform<IMG:Eq+Hash+Clone>(v:Vec<IMG>) -> impl Distribution<IMG> {
         let p = (v.len() as f64).recip();
-        from_vector(v.into_iter().zip(repeat(p)).collect())
+        from(v.into_iter().zip(repeat(p)).collect())
     }
 
     
