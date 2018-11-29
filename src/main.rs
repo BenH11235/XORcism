@@ -1,6 +1,5 @@
 extern crate itertools;
 extern crate counter;
-//hello world!
 
 
 /*
