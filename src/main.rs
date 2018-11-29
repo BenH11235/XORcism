@@ -139,6 +139,10 @@ pub mod dist {
             .collect()
         }
 
+        fn get(&self, key:&IMG) -> Option<f64> {
+            self.probabilities().get(key).cloned()
+        }
+
         fn index_of_coincidence(&self) -> f64 {
             self.probabilities().iter().map(|(_,p)| p.powf(2.0)).sum()
         }
@@ -174,14 +178,20 @@ pub mod dist {
 
     //Maybe impl these as From<T> trait?
 
-    pub fn from<IMG:Eq+Hash+Clone>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
+   
+    pub fn from<IMG:Eq+Hash+Clone>(v:&[(IMG,f64)]) -> impl Distribution<IMG> {
+        from_vector(v.iter().cloned().collect())
+    }
+
+
+    fn from_vector<IMG:Eq+Hash+Clone>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
         _Distribution {
             probabilities : v.into_iter().collect::<HashMap<IMG,f64>>()
         }
     }
  
     pub fn from_sample<IMG:Eq+Hash+Clone+Ord>(v:&Vec<IMG>) -> impl Distribution<IMG> {
-        from( 
+        from_vector( 
             v
             .iter()
             .cloned() //else we get a Counter<&IMG>
@@ -197,7 +207,7 @@ pub mod dist {
 
     pub fn uniform<IMG:Eq+Hash+Clone>(v:Vec<IMG>) -> impl Distribution<IMG> {
         let p = (v.len() as f64).recip();
-        from(v.into_iter().zip(repeat(p)).collect())
+        from_vector(v.into_iter().zip(repeat(p)).collect())
     }
 
     
@@ -504,6 +514,16 @@ mod tests {
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let g_klen = vigenere::guess_key_length(&ct);
         assert_eq!(g_klen, key.len());
+    }
+
+    use dist::known::SHAKESPEARE;
+    #[test]
+    fn compile_distribution_test() {
+        let d = dist::from(&SHAKESPEARE);
+        utils::approx_equal(
+            d.probabilities().get(&'a').unwrap(), 
+            &0.044825042106379775
+        );
     }
     
 }
