@@ -559,8 +559,9 @@ mod tests {
             .map(|x| char::from(x))
             .collect()
         );
-        let (k2, pt2) = 
+        let (key2, pt2) = 
             vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
+        assert_eq!(key[0],*key2);
         assert_eq!(pt,pt2);
     }
 
