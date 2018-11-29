@@ -87,6 +87,8 @@ pub mod crypto {
             .fmax(&|keylen:&usize| key_len_score(&ct,keylen))
             .clone()
         }
+
+        use std::fmt::Debug;
  
         pub fn simple_xor_break<'a,IMG,KEYCHAR> (   
         ct:         &       Vec<IMG>,
@@ -95,8 +97,8 @@ pub mod crypto {
         comb:       &       impl Fn(&IMG,&KEYCHAR) -> IMG)   
         ->          Result<(&'a KEYCHAR, Vec<IMG>),&'static str>
         where
-        IMG:        Clone+Ord+Hash+Display,
-        KEYCHAR:    Clone+Ord+Hash+Display {
+        IMG:        Clone+Ord+Hash+Display+Debug,
+        KEYCHAR:    Clone+Ord+Hash+Display+Debug {
             keyspace
             .outcomes()
             .into_iter()
@@ -537,9 +539,29 @@ mod tests {
         );
     }
 
+    #[cfg(ignore)]
+    #[test]
     fn display_distribution_test() {
         let d = dist::from(&SHAKESPEARE);
         println!("{}",d.display());
+    }
+
+    #[test]
+    fn simple_xor_break_test() {
+        let pt:Vec<char> = 
+            "It was the best of times, it was the worst of times."
+            .chars().collect();
+        let key:Vec<char> = "k".chars().collect();
+        let ct = vigenere::encrypt(&pt,&key,&chrxor);
+        let ptspace = dist::from(&SHAKESPEARE);
+        let keyspace = dist::uniform(
+            (0..=255)
+            .map(|x| char::from(x))
+            .collect()
+        );
+        let (k2, pt2) = 
+            vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
+        assert_eq!(pt,pt2);
     }
 
 
@@ -548,15 +570,3 @@ mod tests {
 
 fn main() {
 }
-
-
-/*let p_disp = |(i,p):(&IMG,&f64)| format!("{:?} with probability {:?}", i, p);
-            let items = self.probabilities().iter().map(p_disp);
-
-            let msg:String = 
-                once(String::from("Distribution {"))
-                .chain(items)
-                .chain(once(String::from("}")))
-                .collect();
-            write!(f,"{}",msg)
-*/
