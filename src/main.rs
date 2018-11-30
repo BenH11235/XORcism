@@ -2,21 +2,6 @@ extern crate itertools;
 extern crate counter;
 
 
-/*
-fn vigenere_attack<G>(
-ct: impl Iterator<Item=G>, 
-ptd: impl Distribution<G>
-) -> Vec<G> {
-    ct
-    .shred(guess_key_length(&ct))
-    .map(|shred| freq_xor_attack(shred,ptd))
-    .mend()
-}
-*/
-
-
-//TODO: Add error handling for case of infinite surprise
-
 pub mod crypto {
     
     pub fn chrxor(c1:&char, c2:&char) -> char {
