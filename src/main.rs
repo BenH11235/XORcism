@@ -4,22 +4,20 @@ extern crate counter;
 
 pub mod crypto {
     
-    pub fn chrxor(c1:&char, c2:&char) -> char {
-        ((*c1 as u8) ^ (*c2 as u8)) as char
+    pub fn chrxor(c1:char, c2:char) -> char {
+        ((c1 as u8) ^ (c2 as u8)) as char
     }
 
     pub fn strxor(s1:&String,s2:&String) -> String {
         s1.chars().zip(s2.chars())
-        .map(|(c1,c2)| chrxor(&c1,&c2))
+        .map(|(c1,c2)| chrxor(c1,c2))
         .collect()
     }
     
     pub mod vigenere {
         use std::iter::once;
         use itertools::iterate;
-        use utils::{shred,Average,FMax};
-        use std::fmt::Display;
-        use std::hash::Hash;
+        use utils::{shred,Average,FMax,Glyph};
         use dist;
         use dist::Distribution;
 
@@ -27,8 +25,7 @@ pub mod crypto {
             pub const EMPTY_KEYSPACE:&str = "Encountered Empty Keyspace";
         }
         
-        pub fn transform
-        <IMG:Clone+Ord+Hash,KEYCHAR:Clone+Ord+Hash+Display>
+        pub fn transform<IMG:Glyph,KEYCHAR:Glyph>
         (buf:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
             let keylen = key.len();
@@ -39,21 +36,19 @@ pub mod crypto {
             .collect()
         }
         
-        pub fn encrypt
-        <IMG:Clone+Ord+Hash,KEYCHAR:Clone+Ord+Hash+Display>
+        pub fn encrypt<IMG:Glyph,KEYCHAR:Glyph>
         (pt:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
             transform(&pt,&key,&comb)
         }
 
-        pub fn decrypt
-        <IMG:Clone+Ord+Hash,KEYCHAR:Clone+Ord+Hash+Display>
+        pub fn decrypt<IMG:Glyph,KEYCHAR:Glyph>
         (ct:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
             transform(&ct,&key,&comb)
         }
 
-        pub fn key_len_score<IMG:Clone+Ord+Hash+Display>(ct:&Vec<IMG>,n:&usize) -> f64 {
+        pub fn key_len_score<IMG:Glyph>(ct:&Vec<IMG>,n:&usize) -> f64 {
             let indices_of_coincidence:Vec<f64> = 
                 shred(ct.iter(),*n)
                 .iter()
@@ -64,7 +59,7 @@ pub mod crypto {
                 ).collect();
             indices_of_coincidence.iter().average()
         }
-        pub fn guess_key_length<IMG:Clone+Ord+Hash+Display>(ct:&Vec<IMG>) -> usize {
+        pub fn guess_key_length<IMG:Glyph>(ct:&Vec<IMG>) -> usize {
             let max_checked_len = (ct.len() as f64 / 5.0).floor() as usize;
             iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
@@ -73,7 +68,6 @@ pub mod crypto {
             .clone()
         }
 
-        use std::fmt::Debug;
  
         pub fn simple_xor_break<'a,IMG,KEYCHAR> (   
         ct:         &       Vec<IMG>,
@@ -81,9 +75,7 @@ pub mod crypto {
         keyspace:   &'a     Distribution<KEYCHAR>, 
         comb:       &       impl Fn(&IMG,&KEYCHAR) -> IMG)   
         ->          Result<(&'a KEYCHAR, Vec<IMG>),&'static str>
-        where
-        IMG:        Clone+Ord+Hash+Display+Debug,
-        KEYCHAR:    Clone+Ord+Hash+Display+Debug {
+        where IMG: Glyph, KEYCHAR: Glyph {
             keyspace
             .outcomes()
             .into_iter()
@@ -100,14 +92,11 @@ pub mod crypto {
 
 
 pub mod dist {
-    use std::clone::*;
     use std::cmp::*;
-    use std::hash::*;
     use std::collections::*;
     use std::iter::*;
-    use std::fmt::Display;
     use itertools::Itertools;
-    use utils::fcmp;
+    use utils::{fcmp,Glyph};
     use counter::Counter;
 
     mod err {
@@ -118,7 +107,7 @@ pub mod dist {
     }
 
 
-    pub trait Distribution<IMG:Eq+Hash+Clone+Display> {
+    pub trait Distribution<IMG:Glyph> {
         fn probabilities(&self) -> &HashMap<IMG,f64>;
 
         fn outcomes(&self) -> Vec<&IMG> {
@@ -178,18 +167,18 @@ pub mod dist {
     //Maybe impl these as From<T> trait?
 
    
-    pub fn from<IMG:Eq+Hash+Clone+Ord+Display>(v:&[(IMG,f64)]) -> impl Distribution<IMG> {
+    pub fn from<IMG:Glyph>(v:&[(IMG,f64)]) -> impl Distribution<IMG> {
         from_vector(v.iter().cloned().collect())
     }
 
 
-    fn from_vector<IMG:Eq+Hash+Clone+Ord+Display>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
+    fn from_vector<IMG:Glyph>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
         _Distribution {
             probabilities : v.into_iter().collect::<HashMap<IMG,f64>>()
         }
     }
  
-    pub fn from_sample<IMG:Eq+Hash+Clone+Ord+Display>(v:&Vec<IMG>) -> impl Distribution<IMG> {
+    pub fn from_sample<IMG:Glyph>(v:&Vec<IMG>) -> impl Distribution<IMG> {
         from_vector( 
             v
             .iter()
@@ -204,16 +193,16 @@ pub mod dist {
         )
     }
 
-    pub fn uniform<IMG:Eq+Hash+Clone+Display+Ord>(v:Vec<IMG>) -> impl Distribution<IMG> {
+    pub fn uniform<IMG: Glyph>(v:Vec<IMG>) -> impl Distribution<IMG> {
         let p = (v.len() as f64).recip();
         from_vector(v.into_iter().zip(repeat(p)).collect())
     }
 
-    struct _Distribution<IMG> where IMG:Eq+Hash+Clone {
+    struct _Distribution<IMG> where IMG: Glyph {
         probabilities : HashMap<IMG,f64>
     }
     
-    impl<IMG> Distribution<IMG> for _Distribution<IMG> where IMG:Eq+Hash+Clone+Display {
+    impl<IMG> Distribution<IMG> for _Distribution<IMG> where IMG: Glyph {
         fn probabilities(&self) -> &HashMap<IMG,f64> {
             &self.probabilities
         }
@@ -321,6 +310,8 @@ mod utils {
     use std::ops::{Add,Div,Mul};
     use itertools::{Itertools,iterate};
     use std::cmp::Ordering;
+    use std::fmt::{Display,Debug};
+    use std::hash::Hash;
 
         
     //Definition of vector trait 
@@ -344,6 +335,9 @@ mod utils {
     pub trait Iter<X> : Iterator<Item=X>+Clone {}
     impl<X,T:Clone> Iter<X> for T where T: Iterator<Item=X> {}
     
+    pub trait Glyph: Eq+Hash+Clone+Ord+Display+Debug {}
+    impl<T> Glyph for T where T:Eq+Hash+Clone+Ord+Display+Debug {}
+
     pub trait Average<T> : Clone {
         fn average(&self) -> T; 
     }
@@ -425,10 +419,9 @@ mod tests {
     use utils::{Average,FMax};
     use dist;
     use dist::Distribution;
-    use crypto;
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
-    use itertools::{assert_equal,iterate};
+    use itertools::{iterate};
     
     #[test]
     fn shred_test() {
