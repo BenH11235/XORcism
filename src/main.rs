@@ -156,7 +156,7 @@ pub mod dist {
     -> Ordering {
         use self::err::{INFINITE_SURPRISE, UNEXPECTED_ERROR};
         match (sup1,sup2) {
-            (Ok(x1), Ok(x2)) => fcmp(&x1,&x2),
+            (Ok(x1), Ok(x2)) => fcmp(*x1,*x2),
             (Err(INFINITE_SURPRISE), Ok(_x2)) => Ordering::Greater,
             (Ok(_x1), Err(INFINITE_SURPRISE)) => Ordering::Less,
             (Err(INFINITE_SURPRISE), Err(INFINITE_SURPRISE)) => Ordering::Equal,
@@ -377,7 +377,7 @@ mod utils {
     }
 
 
-    pub fn fcmp(x:&f64,y:&f64) -> Ordering {
+    pub fn fcmp(x:f64,y:f64) -> Ordering {
         if x.is_nan() || y.is_nan() {
             panic!("Encountered NaN while comparing floats");
         } else if x>y {
@@ -400,10 +400,10 @@ mod utils {
             .clone() //Don't want to exhaust the iterator
             .max_by(|x1,x2| {
                 let (f1, f2) = (f(x1),f(x2));
-                if f1 == f2 {
+                if (f1-f2).abs() < std::f64::EPSILON {
                     Ordering::Greater //default to earlier element in case of tie
                 } else {
-                    fcmp(&f1,&f2)
+                    fcmp(f1,f2)
                 }
             }).unwrap() //Panic on NaNs
         }
