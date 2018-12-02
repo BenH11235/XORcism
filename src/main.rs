@@ -3,7 +3,8 @@ extern crate counter;
 
 
 pub mod crypto {
-    
+    //takes arguments by reference so 'Vigenere Compose'
+    //of non-copy types can have the same prototype
     pub fn chrxor(c1:&char, c2:&char) -> char {
         ((*c1 as u8) ^ (*c2 as u8)) as char
     }
@@ -48,9 +49,9 @@ pub mod crypto {
             transform(&ct,&key,&comb)
         }
 
-        pub fn key_len_score<IMG:Glyph>(ct:&[IMG],n:&usize) -> f64 {
+        pub fn key_len_score<IMG:Glyph>(ct:&[IMG],n:usize) -> f64 {
             let indices_of_coincidence:Vec<f64> = 
-                shred(&ct.iter(),*n)
+                shred(&ct.iter(),n)
                 .iter()
                 .map(|shred|
                     dist::from_sample(
@@ -61,11 +62,10 @@ pub mod crypto {
         }
         pub fn guess_key_length<IMG:Glyph>(ct:&[IMG]) -> usize {
             let max_checked_len = (ct.len() as f64 / 5.0).floor() as usize;
-            iterate(1, |keylen| keylen+1)
+            *iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
             .collect::<Vec<usize>>().iter() //TODO: Get rid of this
-            .fmax(&|keylen:&usize| key_len_score(&ct,keylen))
-            .clone()
+            .fmax(&|keylen:&usize| key_len_score(&ct,*keylen))
         }
 
  
@@ -109,17 +109,7 @@ pub mod dist {
 
     pub trait Distribution<IMG:Glyph> {
         fn probabilities(&self) -> &HashMap<IMG,f64>;
-    /*
-        fn outcomes<'a>(&'a self) -> &'a [&'a IMG] {
-            &
-            self.probabilities()
-            .into_iter()
-            .map(|(x,_p)| x)
-            .collect::<Vec<&'a IMG>>()
-        }
-
-        */
-
+    
         fn get(&self, key:&IMG) -> Option<f64> {
             self.probabilities().get(key).cloned()
         }
@@ -128,8 +118,6 @@ pub mod dist {
             self.probabilities().iter().map(|(_,p)| p.powf(2.0)).sum()
         }
 
-        //fn pointwise(&self, f: Fn(IMG)->IMG) -> impl Distribution {
-        //}
         fn surprise(&self, events:&[IMG]) -> Result<f64,&'static str> {
             events
             .iter()
