@@ -65,7 +65,7 @@ pub mod crypto {
             *iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
             .collect::<Vec<usize>>().iter() //TODO: Get rid of this
-            .fmax(&|keylen:&usize| key_len_score(&ct,*keylen))
+            .fmax(&|&keylen| key_len_score(&ct,keylen))
         }
 
  
