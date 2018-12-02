@@ -26,7 +26,7 @@ pub mod crypto {
         }
         
         pub fn transform<IMG:Glyph,KEYCHAR:Glyph>
-        (buf:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
+        (buf:&[IMG], key:&[KEYCHAR], comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
             let keylen = key.len();
             buf
@@ -37,29 +37,29 @@ pub mod crypto {
         }
         
         pub fn encrypt<IMG:Glyph,KEYCHAR:Glyph>
-        (pt:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
+        (pt:&[IMG], key:&[KEYCHAR], comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
             transform(&pt,&key,&comb)
         }
 
         pub fn decrypt<IMG:Glyph,KEYCHAR:Glyph>
-        (ct:&Vec<IMG>, key:&Vec<KEYCHAR>, comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
+        (ct:&[IMG], key:&[KEYCHAR], comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
         -> Vec<IMG> {
             transform(&ct,&key,&comb)
         }
 
-        pub fn key_len_score<IMG:Glyph>(ct:&Vec<IMG>,n:&usize) -> f64 {
+        pub fn key_len_score<IMG:Glyph>(ct:&[IMG],n:&usize) -> f64 {
             let indices_of_coincidence:Vec<f64> = 
                 shred(&ct.iter(),*n)
                 .iter()
                 .map(|shred|
                     dist::from_sample(
-                        & shred.clone().collect()
+                        & shred.clone().cloned().collect::<Vec<IMG>>()
                     ).index_of_coincidence()
                 ).collect();
             indices_of_coincidence.iter().average()
         }
-        pub fn guess_key_length<IMG:Glyph>(ct:&Vec<IMG>) -> usize {
+        pub fn guess_key_length<IMG:Glyph>(ct:&[IMG]) -> usize {
             let max_checked_len = (ct.len() as f64 / 5.0).floor() as usize;
             iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
@@ -70,16 +70,16 @@ pub mod crypto {
 
  
         pub fn simple_xor_break<'a,IMG,KEYCHAR> (   
-        ct:         &       Vec<IMG>,
+        ct:         &       [IMG],
         ptspace:    &       Distribution<IMG>,
         keyspace:   &'a     Distribution<KEYCHAR>, 
         comb:       &       impl Fn(&IMG,&KEYCHAR) -> IMG)   
         ->          Result<(&'a KEYCHAR, Vec<IMG>),&'static str>
         where IMG: Glyph, KEYCHAR: Glyph {
             keyspace
-            .outcomes()
+            .probabilities()
             .into_iter()
-            .map(|k| { 
+            .map(|(k,_)| { 
                 let kv:Vec<KEYCHAR> = once(k).cloned().collect(); 
                 (k,decrypt(&ct, &kv, &comb))
             }).min_by(|(_,c1),(_,c2)| 
@@ -109,13 +109,16 @@ pub mod dist {
 
     pub trait Distribution<IMG:Glyph> {
         fn probabilities(&self) -> &HashMap<IMG,f64>;
-
-        fn outcomes(&self) -> Vec<&IMG> {
+    /*
+        fn outcomes<'a>(&'a self) -> &'a [&'a IMG] {
+            &
             self.probabilities()
-            .iter()
+            .into_iter()
             .map(|(x,_p)| x)
-            .collect()
+            .collect::<Vec<&'a IMG>>()
         }
+
+        */
 
         fn get(&self, key:&IMG) -> Option<f64> {
             self.probabilities().get(key).cloned()
@@ -127,7 +130,7 @@ pub mod dist {
 
         //fn pointwise(&self, f: Fn(IMG)->IMG) -> impl Distribution {
         //}
-        fn surprise(&self, events:&Vec<IMG>) -> Result<f64,&'static str> {
+        fn surprise(&self, events:&[IMG]) -> Result<f64,&'static str> {
             events
             .iter()
             .map(|e| 
@@ -166,21 +169,16 @@ pub mod dist {
 
     //Maybe impl these as From<T> trait?
 
-   
+
     pub fn from<IMG:Glyph>(v:&[(IMG,f64)]) -> impl Distribution<IMG> {
-        from_vector(v.to_vec())
-    }
-
-
-    fn from_vector<IMG:Glyph>(v:Vec<(IMG,f64)>) -> impl Distribution<IMG> {
         _Distribution {
-            probabilities : v.into_iter().collect::<HashMap<IMG,f64>>()
+            probabilities : v.into_iter().cloned().collect::<HashMap<IMG,f64>>()
         }
     }
  
-    pub fn from_sample<IMG:Glyph>(v:&Vec<IMG>) -> impl Distribution<IMG> {
-        from_vector( 
-            v
+    pub fn from_sample<IMG:Glyph>(v:&[IMG]) -> impl Distribution<IMG> {
+        from( 
+            &v
             .iter()
             .cloned() //else we get a Counter<&IMG>
             .collect::<Counter<IMG>>()
@@ -189,13 +187,13 @@ pub mod dist {
             .map(|(x,count)| (
                 x,
                 count as f64 / v.len() as f64
-            )).collect()
+            )).collect::<Vec<(IMG,f64)>>()
         )
     }
 
-    pub fn uniform<IMG: Glyph>(v:Vec<IMG>) -> impl Distribution<IMG> {
+    pub fn uniform<IMG: Glyph>(v:&[IMG]) -> impl Distribution<IMG> {
         let p = (v.len() as f64).recip();
-        from_vector(v.into_iter().zip(repeat(p)).collect())
+        from(&v.iter().cloned().zip(repeat(p)).collect::<Vec<(IMG,f64)>>())
     }
 
     struct _Distribution<IMG> where IMG: Glyph {
@@ -445,7 +443,7 @@ mod tests {
 
     #[test]
     fn coincidence_test() {
-        let ud = dist::uniform(iterate(0, |x| x+1).take(10).collect());
+        let ud = dist::uniform(&iterate(0, |x| x+1).take(10).collect::<Vec<i32>>());
         assert!(
             utils::approx_equal(
                 ud.index_of_coincidence(),
@@ -533,9 +531,9 @@ mod tests {
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let ptspace = dist::from(&SHAKESPEARE);
         let keyspace = dist::uniform(
-            (0..=255)
+            &(0..=255)
             .map(|x| char::from(x))
-            .collect()
+            .collect::<Vec<char>>()
         );
         let (key2, pt2) = 
             vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
