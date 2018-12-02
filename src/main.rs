@@ -50,7 +50,7 @@ pub mod crypto {
 
         pub fn key_len_score<IMG:Glyph>(ct:&Vec<IMG>,n:&usize) -> f64 {
             let indices_of_coincidence:Vec<f64> = 
-                shred(ct.iter(),*n)
+                shred(&ct.iter(),*n)
                 .iter()
                 .map(|shred|
                     dist::from_sample(
@@ -359,7 +359,7 @@ mod utils {
 
     //Change into trait so we can v.shreds(3)
     //Maybe a more descriptive name?
-    pub fn shred<'a,X:'a>(s: impl Iter<&'a X>, m: usize) -> Vec<impl Iter<&'a X>> {
+    pub fn shred<'a,X:'a>(s: &impl Iter<&'a X>, m: usize) -> Vec<impl Iter<&'a X>> {
         iterate(0, |i| i+1)
         .take(m)
         .map(|r| 
@@ -436,7 +436,7 @@ mod tests {
             ).collect();
         let v:Vec<u32> = iterate(0, |x| x+1).take(30).collect();
         let shreds2:Vec<Vec<u32>> =
-            utils::shred(v.iter(),3)
+            utils::shred(&v.iter(),3)
             .into_iter()
             .map(|shred| shred.cloned().collect())
             .collect();
@@ -448,8 +448,8 @@ mod tests {
         let ud = dist::uniform(iterate(0, |x| x+1).take(10).collect());
         assert!(
             utils::approx_equal(
-                &ud.index_of_coincidence(),
-                &0.1
+                ud.index_of_coincidence(),
+                0.1
             )
         )
     }
@@ -464,8 +464,8 @@ mod tests {
         let computed_dist = dist::from_sample(&samples);
         assert!(
             utils::approx_equal(
-                computed_dist.probabilities().get(&4).unwrap(),
-                &0.4
+                *computed_dist.probabilities().get(&4).unwrap(),
+                0.4
             )
         )
     }
@@ -512,8 +512,8 @@ mod tests {
     fn compile_distribution_test() {
         let d = dist::from(&SHAKESPEARE);
         utils::approx_equal(
-            d.probabilities().get(&'a').unwrap(), 
-            &0.044825042106379775
+            *d.probabilities().get(&'a').unwrap(), 
+            0.044825042106379775
         );
     }
 
