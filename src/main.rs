@@ -4,13 +4,13 @@ extern crate counter;
 
 pub mod crypto {
     
-    pub fn chrxor(c1:char, c2:char) -> char {
-        ((c1 as u8) ^ (c2 as u8)) as char
+    pub fn chrxor(c1:&char, c2:&char) -> char {
+        ((*c1 as u8) ^ (*c2 as u8)) as char
     }
 
     pub fn strxor(s1:&String,s2:&String) -> String {
         s1.chars().zip(s2.chars())
-        .map(|(c1,c2)| chrxor(c1,c2))
+        .map(|(c1,c2)| chrxor(&c1,&c2))
         .collect()
     }
     
@@ -168,7 +168,7 @@ pub mod dist {
 
    
     pub fn from<IMG:Glyph>(v:&[(IMG,f64)]) -> impl Distribution<IMG> {
-        from_vector(v.iter().cloned().collect())
+        from_vector(v.to_vec())
     }
 
 
