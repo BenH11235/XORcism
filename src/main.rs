@@ -372,8 +372,8 @@ mod utils {
 
     
     #[allow(dead_code)]    
-    pub fn approx_equal(target:&f64,result:&f64) -> bool {
-        (result-target).abs() / result < 0.001
+    pub fn approx_equal(target:f64,result:f64) -> bool {
+        (result-target).abs() < std::f64::EPSILON
     }
 
 
@@ -400,7 +400,7 @@ mod utils {
             .clone() //Don't want to exhaust the iterator
             .max_by(|x1,x2| {
                 let (f1, f2) = (f(x1),f(x2));
-                if (f1-f2).abs() < std::f64::EPSILON {
+                if approx_equal(f1,f2) {
                     Ordering::Greater //default to earlier element in case of tie
                 } else {
                     fcmp(f1,f2)
