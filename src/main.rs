@@ -454,7 +454,7 @@ mod utils {
 #[cfg(test)]
 mod tests {
     use utils;
-    use utils::{Average,FMax,ZipN,IntoZipN};
+    use utils::{Average,FMax,IntoZipN,UnzipN};
     use dist;
     use dist::Distribution;
     use crypto::{vigenere,chrxor};
@@ -462,7 +462,7 @@ mod tests {
     use itertools::{iterate,assert_equal};
     
     #[test]
-    fn shred_test() {
+    fn unzipn_test() {
         let shreds1:Vec<Vec<u32>> = 
             iterate(0, |x| x+1)
             .take(3)
@@ -474,7 +474,7 @@ mod tests {
             ).collect();
         let v:Vec<u32> = iterate(0, |x| x+1).take(30).collect();
         let shreds2:Vec<Vec<u32>> =
-            utils::shred(&v.iter(),3)
+            v.iter().unzipn(3)
             .into_iter()
             .map(|shred| shred.cloned().collect())
             .collect();
