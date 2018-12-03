@@ -299,7 +299,7 @@ mod utils {
     use std::fmt::{Display,Debug};
     use std::hash::Hash;
     use std::f64::EPSILON;
-    use std::iter::empty;
+    use itertools::Step;
 
         
     //Definition of vector trait 
@@ -420,6 +420,25 @@ mod utils {
             let val = self.iters[self.i].next();
             self.i = (self.i+1) % self.iters.len();
             val
+        }
+    }
+
+    pub trait UnzipN : Sized+Clone {
+        fn unzipn(self,usize) -> Vec<Step<Self>>; //No `impl trait` in traits =(
+    }
+
+    impl<T,TI> UnzipN for TI
+    where TI: Iterator<Item=T>+Sized+Clone {
+        fn unzipn(self,m:usize) -> Vec<Step<TI>> {
+        iterate(0, |i| i+1)
+        .take(m)
+        .map(|r| 
+            self
+            .clone() //Need to construct m iterators from one
+            .dropping(r)
+            .step(m)
+        ).collect()
+
         }
     }
 
