@@ -298,6 +298,8 @@ mod utils {
     use std::cmp::Ordering;
     use std::fmt::{Display,Debug};
     use std::hash::Hash;
+    use std::f64::EPSILON;
+    use std::iter::empty;
 
         
     //Definition of vector trait 
@@ -359,7 +361,7 @@ mod utils {
     
     #[allow(dead_code)]    
     pub fn approx_equal(target:f64,result:f64) -> bool {
-        (result-target).abs() < std::f64::EPSILON
+        (result-target).abs() < EPSILON
     }
 
 
@@ -394,6 +396,37 @@ mod utils {
             }).unwrap() //Panic on NaNs
         }
     }
+
+    pub struct ZipN<TI> {
+        iters : Vec<TI>,
+        i : usize
+    }
+
+    pub trait IntoZipN<TI> {
+        fn zipn(self) -> ZipN<TI>;
+    }
+
+    impl<TI> IntoZipN<TI> for Vec<TI> {
+        fn zipn(self) -> ZipN<TI> {
+            ZipN {iters:self, i:0}
+        }
+    }
+
+    impl<T,TI> Iterator for ZipN<TI> 
+    where TI: Iterator<Item=T> {
+        type Item = T;
+
+        fn next(&mut self) -> Option<T> {
+            let val = self.iters[self.i].next();
+            self.i = (self.i+1) % self.iters.len();
+            val
+        }
+    }
+
+    
+    
+
+
 }
 
 
@@ -402,12 +435,12 @@ mod utils {
 #[cfg(test)]
 mod tests {
     use utils;
-    use utils::{Average,FMax};
+    use utils::{Average,FMax,ZipN,IntoZipN};
     use dist;
     use dist::Distribution;
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
-    use itertools::{iterate};
+    use itertools::{iterate,assert_equal};
     
     #[test]
     fn shred_test() {
@@ -527,6 +560,24 @@ mod tests {
             vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
         assert_eq!(key[0],*key2);
         assert_eq!(pt,pt2);
+    }
+
+    #[test]
+    fn zipn_test() {
+        let vec_of_iters = 
+            iterate(1, |i| i+1)
+            .take(3)
+            .map(|i|
+                 iterate(1, move |j| j+i)
+                 .take(3)
+            ).collect::<Vec<_>>();
+
+        let zipped = vec_of_iters.zipn();
+        let zipped2 = vec![1,1,1,2,3,4,3,5,7].into_iter();
+        assert_equal(zipped,zipped2);
+
+
+
     }
 
 
