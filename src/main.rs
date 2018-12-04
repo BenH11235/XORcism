@@ -18,7 +18,7 @@ pub mod crypto {
     pub mod vigenere {
         use std::iter::once;
         use itertools::iterate;
-        use utils::{shred,Average,FMax,Glyph};
+        use utils::{Average,FMax,Glyph,UnzipN};
         use dist;
         use dist::Distribution;
 
@@ -51,7 +51,9 @@ pub mod crypto {
 
         pub fn key_len_score<IMG:Glyph>(ct:&[IMG],n:usize) -> f64 {
             let indices_of_coincidence:Vec<f64> = 
-                shred(&ct.iter(),n)
+                ct
+                .iter()
+                .unzipn(n)
                 .iter()
                 .map(|shred|
                     dist::from_sample(
@@ -344,21 +346,7 @@ mod utils {
             sum / len
         }
     }
-
-    //Change into trait so we can v.shreds(3)
-    //Maybe a more descriptive name?
-    pub fn shred<'a,X:'a>(s: &impl Iter<&'a X>, m: usize) -> Vec<impl Iter<&'a X>> {
-        iterate(0, |i| i+1)
-        .take(m)
-        .map(|r| 
-            s
-            .clone() //Need to construct m iterators from one
-            .dropping(r)
-            .step(m)
-        ).collect()
-    }
-
-    
+        
     #[allow(dead_code)]    
     pub fn approx_equal(target:f64,result:f64) -> bool {
         (result-target).abs() < EPSILON
@@ -397,22 +385,22 @@ mod utils {
         }
     }
 
-    pub struct ZipN<TI> {
+    pub struct _ZipN<TI> {
         iters : Vec<TI>,
         i : usize
     }
 
-    pub trait IntoZipN<TI> {
-        fn zipn(self) -> ZipN<TI>;
+    pub trait ZipN<TI> {
+        fn zipn(self) -> _ZipN<TI>;
     }
 
-    impl<TI> IntoZipN<TI> for Vec<TI> {
-        fn zipn(self) -> ZipN<TI> {
-            ZipN {iters:self, i:0}
+    impl<TI> ZipN<TI> for Vec<TI> {
+        fn zipn(self) -> _ZipN<TI> {
+            _ZipN {iters:self, i:0}
         }
     }
 
-    impl<T,TI> Iterator for ZipN<TI> 
+    impl<T,TI> Iterator for _ZipN<TI> 
     where TI: Iterator<Item=T> {
         type Item = T;
 
@@ -454,7 +442,7 @@ mod utils {
 #[cfg(test)]
 mod tests {
     use utils;
-    use utils::{Average,FMax,IntoZipN,UnzipN};
+    use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
     use dist::Distribution;
     use crypto::{vigenere,chrxor};
