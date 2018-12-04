@@ -450,6 +450,21 @@ mod tests {
     use itertools::{iterate,assert_equal};
     
     #[test]
+    fn zipn_test() {
+        let vec_of_iters = 
+            iterate(1, |i| i+1)
+            .take(3)
+            .map(|i|
+                 iterate(1, move |j| j+i)
+                 .take(3)
+            ).collect::<Vec<_>>();
+
+        let zipped = vec_of_iters.zipn();
+        let zipped2 = vec![1,1,1,2,3,4,3,5,7].into_iter();
+        assert_equal(zipped,zipped2);
+    }
+
+    #[test]
     fn unzipn_test() {
         let shreds1:Vec<Vec<u32>> = 
             iterate(0, |x| x+1)
@@ -567,24 +582,6 @@ mod tests {
             vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
         assert_eq!(key[0],*key2);
         assert_eq!(pt,pt2);
-    }
-
-    #[test]
-    fn zipn_test() {
-        let vec_of_iters = 
-            iterate(1, |i| i+1)
-            .take(3)
-            .map(|i|
-                 iterate(1, move |j| j+i)
-                 .take(3)
-            ).collect::<Vec<_>>();
-
-        let zipped = vec_of_iters.zipn();
-        let zipped2 = vec![1,1,1,2,3,4,3,5,7].into_iter();
-        assert_equal(zipped,zipped2);
-
-
-
     }
 
 
