@@ -8,7 +8,9 @@ extern crate counter;
 pub mod crypto {
     //takes arguments by reference so 'Vigenere Compose'
     //of non-copy types can have the same prototype
-    //
+    pub fn chrxor(c1:&char, c2:&char) -> char {
+        ((*c1 as u8) ^ (*c2 as u8)) as char
+    }
     
     pub fn strxor(s1:&str,s2:&str) -> String {
         s1.chars().zip(s2.chars())
