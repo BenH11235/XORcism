@@ -141,7 +141,7 @@ pub mod dist {
         }
     }
 
-    pub trait GetUnderlying<T> {
+    trait GetUnderlying<T> {
         fn val(&self) -> T;
     }
     impl GetUnderlying<_Prob> for Prob {
