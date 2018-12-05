@@ -8,10 +8,8 @@ extern crate counter;
 pub mod crypto {
     //takes arguments by reference so 'Vigenere Compose'
     //of non-copy types can have the same prototype
-    pub fn chrxor(c1:&char, c2:&char) -> char {
-        ((*c1 as u8) ^ (*c2 as u8)) as char
-    }
-
+    //
+    
     pub fn strxor(s1:&str,s2:&str) -> String {
         s1.chars().zip(s2.chars())
         .map(|(c1,c2)| chrxor(&c1,&c2))
@@ -26,7 +24,9 @@ pub mod crypto {
         use dist::Distribution;
 
         mod err {
-            pub const EMPTY_KEYSPACE:&str = "Encountered Empty Keyspace";
+            type Msg = &'static str;
+            pub const EMPTY_KEYSPACE:&str = 
+                "Encountered Empty Keyspace";
         }
         
         pub fn transform<T:Glyph,K:Glyph>
@@ -79,7 +79,7 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
-        ->          Result<(&'a K, Vec<T>),&'static str>
+        ->          Result<(&'a K, Vec<T>),err::Msg>
         where T: Glyph, K: Glyph {
             keyspace
             .probabilities()
@@ -91,6 +91,25 @@ pub mod crypto {
                 dist::surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
             ).ok_or(err::EMPTY_KEYSPACE)
         }
+
+        pub fn full_break<'a,T,K> (   
+        ct:         &       [T],
+        ptspace:    &       Distribution<T>,
+        keyspace:   &'a     Distribution<K>, 
+        comb:       &       impl Fn(&T,&K) -> T)   
+        ->          () //Result<(Vec<&'a K>, Vec<T>),&'static str>
+        where T: Glyph, K: Glyph {
+            let klen_guess = guess_key_length(ct);
+            let (keychars, pt_shreds) = 
+                ct
+                .iter()
+                .unzipn(klen_guess)
+                .map(|shred| simple_xor_break(ct,ptspace,keyspace,comb))
+                .unzip();
+        }
+
+
+
 
     }
 }
@@ -493,11 +512,6 @@ mod utils {
 
         }
     }
-
-    
-    
-
-
 }
 
 
