@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate derive_more;
+
 extern crate itertools;
 extern crate counter;
 
@@ -94,7 +97,9 @@ pub mod crypto {
 
 
 pub mod dist {
-    use std::cmp::*;
+    use std::ops::Div;
+    use std::cmp::Ordering;
+    use std::cmp::Ordering::{Equal,Greater,Less};
     use std::collections::*;
     use std::iter::*;
     use itertools::Itertools;
@@ -102,36 +107,94 @@ pub mod dist {
     use counter::Counter;
 
     mod err {
+        pub type Msg = &'static str;
+        pub const PROBABILITY_OUT_OF_BOUNDS:&str =
+            "Encountered `probability` less than 0 or greater than 1.";
         pub const INFINITE_SURPRISE:&str = 
             "Encountered infinitely surprising event";
-        pub const UNEXPECTED_ERROR:&str =
-            "A function returned an unexpected error.";
+        pub const MATHEMATICAL_PARADOX:&str = 
+            "Congratulations, you have broken mathematics.";
+        pub const MALFORMED_SURPRISE_CMP:&str =
+            "Attempted comparison of malformed surprises.";
     }
 
 
+    //Rust's support for newtype ergonomics isn't complete. Some things you get
+    //For free, and others you need to implement. Forgive this kludginess.
+    type _Prob = f64;
+
+    #[derive(Add,Mul,AddAssign,MulAssign,Debug,Display,From,Clone,Copy,Into)]
+    pub struct Prob(pub _Prob);
+    impl Prob {
+        fn surprise(&self) -> Result<f64,err::Msg> {
+            let p = self.val();
+            match (fcmp(p,0.0), fcmp(p,1.0)) {
+                (Less,Less)|(Greater,Greater) => 
+                    Err(err::PROBABILITY_OUT_OF_BOUNDS),
+                (Equal,Less) => 
+                    Err(err::INFINITE_SURPRISE),
+                (Greater,Less)|(Greater,Equal) =>
+                    Ok(p.recip().log(2.0)),
+                _ =>
+                    Err(err::MATHEMATICAL_PARADOX)
+            }
+        }
+    }
+
+    pub trait GetUnderlying<T> {
+        fn val(&self) -> T;
+    }
+    impl GetUnderlying<_Prob> for Prob {
+        fn val(&self) -> _Prob {
+            self.0
+        }
+    }
+
+    //Completes impl Vector for Prob
+    impl Div<f64> for Prob {
+        type Output = Self;
+        fn div(self, other:f64) -> Self {
+            Prob(self.val() / other)
+        }
+    }
+
+    trait Pow<T> {
+        fn pow(&self,other:T) -> Self;
+    }
+    impl Pow<f64> for Prob {
+        fn pow(&self,other:_Prob) -> Prob {
+            Prob(self.val().powf(other))
+        }
+    }
+
+
+
     pub trait Distribution<IMG:Glyph> {
-        fn probabilities(&self) -> &HashMap<IMG,f64>;
+        fn probabilities(&self) -> &HashMap<IMG,Prob>;
     
-        fn get(&self, key:&IMG) -> Option<f64> {
-            self.probabilities().get(key).cloned()
+        fn get(&self, key:&IMG) -> Prob {
+            self.probabilities()
+            .get(key)
+            .unwrap_or(&Prob(0.0))
+            .clone()
         }
 
         fn index_of_coincidence(&self) -> f64 {
-            self.probabilities().iter().map(|(_,p)| p.powf(2.0)).sum()
+            self.probabilities()
+            .iter()
+            .map(|(_,p)| p.pow(2.0).val())
+            .sum()
         }
 
-        fn surprise(&self, events:&[IMG]) -> Result<f64,&'static str> {
+        fn surprise(&self, events:&[IMG]) -> Result<f64,err::Msg> {
             events
             .iter()
-            .map(|e| 
-                self.probabilities()
-                .get(e)
-            ).fold_options(0.0, |a,b:&f64| a+b.recip().log(2.0))
-            .ok_or(err::INFINITE_SURPRISE)
+            .map(|e| self.get(e).surprise())
+            .fold_results(0.0, |s1,s2| s1+s2)
         }
 
         fn display(&self) -> String {
-            let p_disp = |(i,p):(&IMG,&f64)| format!("Item '{}' with probability {}", i, p);
+            let p_disp = |(i,p):(&IMG,&Prob)| format!("Item '{}' with probability {}", i, p);
             let items = self.probabilities().iter().map(p_disp);
             once(String::from("Distribution {"))
             .chain(items)
@@ -145,24 +208,24 @@ pub mod dist {
 
 
 
-    pub fn surprisecmp(sup1:&Result<f64,&str>,sup2:&Result<f64,&str>) 
+    pub fn surprisecmp(sup1:&Result<f64,err::Msg>,sup2:&Result<f64,err::Msg>) 
     -> Ordering {
-        use self::err::{INFINITE_SURPRISE, UNEXPECTED_ERROR};
+        use self::err::{INFINITE_SURPRISE, MALFORMED_SURPRISE_CMP};
         match (sup1,sup2) {
             (Ok(x1), Ok(x2)) => fcmp(*x1,*x2),
-            (Err(INFINITE_SURPRISE), Ok(_x2)) => Ordering::Greater,
-            (Ok(_x1), Err(INFINITE_SURPRISE)) => Ordering::Less,
-            (Err(INFINITE_SURPRISE), Err(INFINITE_SURPRISE)) => Ordering::Equal,
-            _ => panic!(UNEXPECTED_ERROR) 
+            (Err(INFINITE_SURPRISE), Ok(_x2)) => Greater,
+            (Ok(_x1), Err(INFINITE_SURPRISE)) => Less,
+            (Err(INFINITE_SURPRISE), Err(INFINITE_SURPRISE)) => Equal,
+            _ => panic!(MALFORMED_SURPRISE_CMP) 
         }
     }
 
     //Maybe impl these as From<T> trait?
 
 
-    pub fn from<IMG:Glyph>(v:&[(IMG,f64)]) -> impl Distribution<IMG> {
+    pub fn from<IMG:Glyph>(v:&[(IMG,Prob)]) -> impl Distribution<IMG> {
         _Distribution {
-            probabilities : v.into_iter().cloned().collect::<HashMap<IMG,f64>>()
+            probabilities : v.into_iter().cloned().collect::<HashMap<IMG,Prob>>()
         }
     }
  
@@ -176,120 +239,121 @@ pub mod dist {
             .into_iter()
             .map(|(x,count)| (
                 x,
-                count as f64 / v.len() as f64
-            )).collect::<Vec<(IMG,f64)>>()
+                Prob(count as f64 / v.len() as f64)
+            )).collect::<Vec<(IMG,Prob)>>()
         )
     }
 
     pub fn uniform<IMG: Glyph>(v:&[IMG]) -> impl Distribution<IMG> {
-        let p = (v.len() as f64).recip();
-        from(&v.iter().cloned().zip(repeat(p)).collect::<Vec<(IMG,f64)>>())
+        let p = Prob((v.len() as f64).recip());
+        from(&v.iter().cloned().zip(repeat(p)).collect::<Vec<(IMG,Prob)>>())
     }
 
     struct _Distribution<IMG> where IMG: Glyph {
-        probabilities : HashMap<IMG,f64>
+        probabilities : HashMap<IMG,Prob>
     }
     
     impl<IMG> Distribution<IMG> for _Distribution<IMG> where IMG: Glyph {
-        fn probabilities(&self) -> &HashMap<IMG,f64> {
+        fn probabilities(&self) -> &HashMap<IMG,Prob> {
             &self.probabilities
         }
     }
 
     pub mod known {
+        use dist::Prob;
 
-        pub const SHAKESPEARE:[(char,f64);91] = [
-            (' ', 0.237_062_444_956_660_62),
-            ('e', 0.074_130_862_579_396_6),
-            ('t', 0.053_126_498_319_317_414),
-            ('o', 0.051_553_818_393_209_924),
-            ('a', 0.044_825_042_106_379_775),
-            ('h', 0.040_014_297_756_457_76),
-            ('n', 0.039_559_569_008_018_94),
-            ('s', 0.039_386_251_765_463_294),
-            ('r', 0.038_271_598_378_879_19),
-            ('i', 0.036_309_412_683_561_006),
-            ('l', 0.026_778_246_817_310_985),
-            ('d', 0.024_509_732_972_359_564),
-            ('\n', 0.022_801_660_401_168_957),
-            ('u', 0.021_035_876_485_998_403),
-            ('m', 0.017_511_270_659_058_054),
-            ('y', 0.015_622_552_420_679_421),
-            (',', 0.015_238_359_759_327_207),
-            ('.', 0.014_295_008_298_524_843),
-            ('w', 0.013_354_954_628_807_049),
-            ('f', 0.012_605_439_999_530_98),
-            ('c', 0.012_217_949_547_094_197),
-            ('g', 0.010_449_417_472_686_504),
-            ('I', 0.010_224_251_625_856_808),
-            ('b', 0.008_527_171_691_614_762),
-            ('p', 0.008_523_873_900_530_193),
-            ('A', 0.008_150_307_454_894_921),
-            ('E', 0.007_801_657_653_009_72),
-            ('T', 0.007_291_782_509_212_288),
-            ('S', 0.006_231_176_254_291_938),
-            ('v', 0.006_227_145_620_744_132),
-            ('O', 0.006_084_241_340_412_836),
-            ('\'', 0.005_692_170_622_580_818),
-            ('k', 0.005_351_948_509_022_848),
-            ('R', 0.005_307_611_539_996_984),
-            ('N', 0.005_008_611_814_996_119),
-            ('L', 0.004_371_038_871_979_566_5),
-            ('C', 0.003_938_478_608_053_682_5),
-            ('H', 0.003_382_434_389_072_292_7),
-            (';', 0.003_151_039_381_305_078_7),
-            ('W', 0.003_022_242_318_391_103),
-            ('M', 0.002_907_918_894_126_066),
-            ('D', 0.002_873_292_087_738_098_4),
-            ('B', 0.002_823_825_221_469_572_6),
-            ('U', 0.002_588_582_790_770_362_2),
-            ('P', 0.002_187_351_542_147_877),
-            ('F', 0.002_145_945_942_974_963),
-            ('G', 0.002_045_363_314_895_627_5),
-            ('?', 0.001_919_314_411_218_792_2),
-            ('Y', 0.001_667_033_393_249_311_6),
-            ('!', 0.001_620_314_686_217_926_5),
-            ('-', 0.001_479_242_512_044_723_9),
-            ('K', 0.001_135_172_975_554_757_2),
-            ('x', 0.000_858_891_366_914_251_3),
-            ('V', 0.000_655_894_004_597_487_2),
-            ('j', 0.000_496_867_190_074_967_9),
-            ('q', 0.000_440_438_320_405_686_9),
-            ('[', 0.000_381_994_133_962_503),
-            (']', 0.000_380_528_449_036_028_2),
-            ('J', 0.000_378_696_342_877_934_63),
-            (':', 0.000_334_725_795_083_689_7),
-            ('Q', 0.000_215_822_105_423_418_97),
-            ('z', 0.000_201_348_466_774_48),
-            ('9', 0.000_173_683_663_787_267_55),
-            ('1', 0.000_170_019_451_471_080_48),
-            (')', 0.000_115_239_477_344_083_64),
-            ('(', 0.000_115_056_266_728_274_29),
-            ('X', 0.000_111_025_633_180_468_51),
-            ('Z', 0.000_097_468_047_610_576_31),
-            ('"', 0.000_086_108_989_430_396_36),
-            ('<', 0.000_085_742_568_198_777_65),
-            ('>', 0.000_080_795_881_571_925_1),
-            ('2', 0.000_067_055_085_386_223_55),
-            ('3', 0.000_060_459_503_217_086_81),
-            ('0', 0.000_054_779_974_126_996_84),
-            ('4', 0.000_017_038_587_270_269_92),
-            ('5', 0.000_015_023_270_496_367_025),
-            ('_', 0.000_013_007_953_722_464_131),
-            ('*', 0.000_011_542_268_795_989_3),
-            ('6', 0.000_011_542_268_795_989_3),
-            ('7', 0.000_007_511_635_248_183_512),
-            ('8', 0.000_007_328_424_632_374_159),
-            ('|', 0.000_006_045_950_321_708_681),
-            ('&', 0.000_003_847_422_931_996_433_5),
-            ('@', 0.000_001_465_684_926_474_831_8),
-            ('/', 0.000_000_916_053_079_046_769_8),
-            ('}', 0.000_000_366_421_231_618_707_95),
-            ('`', 0.000_000_183_210_615_809_353_98),
-            ('#', 0.000_000_183_210_615_809_353_98),
-            ('~', 0.000_000_183_210_615_809_353_98),
-            ('%', 0.000_000_183_210_615_809_353_98),
-            ('=', 0.000_000_183_210_615_809_353_98)
+        pub const SHAKESPEARE:[(char,Prob);91] = [
+            (' ', Prob(0.237_062_444_956_660_62)),
+            ('e', Prob(0.074_130_862_579_396_6)),
+            ('t', Prob(0.053_126_498_319_317_414)),
+            ('o', Prob(0.051_553_818_393_209_924)),
+            ('a', Prob(0.044_825_042_106_379_775)),
+            ('h', Prob(0.040_014_297_756_457_76)),
+            ('n', Prob(0.039_559_569_008_018_94)),
+            ('s', Prob(0.039_386_251_765_463_294)),
+            ('r', Prob(0.038_271_598_378_879_19)),
+            ('i', Prob(0.036_309_412_683_561_006)),
+            ('l', Prob(0.026_778_246_817_310_985)),
+            ('d', Prob(0.024_509_732_972_359_564)),
+            ('\n', Prob(0.022_801_660_401_168_957)),
+            ('u', Prob(0.021_035_876_485_998_403)),
+            ('m', Prob(0.017_511_270_659_058_054)),
+            ('y', Prob(0.015_622_552_420_679_421)),
+            (',', Prob(0.015_238_359_759_327_207)),
+            ('.', Prob(0.014_295_008_298_524_843)),
+            ('w', Prob(0.013_354_954_628_807_049)),
+            ('f', Prob(0.012_605_439_999_530_98)),
+            ('c', Prob(0.012_217_949_547_094_197)),
+            ('g', Prob(0.010_449_417_472_686_504)),
+            ('I', Prob(0.010_224_251_625_856_808)),
+            ('b', Prob(0.008_527_171_691_614_762)),
+            ('p', Prob(0.008_523_873_900_530_193)),
+            ('A', Prob(0.008_150_307_454_894_921)),
+            ('E', Prob(0.007_801_657_653_009_72)),
+            ('T', Prob(0.007_291_782_509_212_288)),
+            ('S', Prob(0.006_231_176_254_291_938)),
+            ('v', Prob(0.006_227_145_620_744_132)),
+            ('O', Prob(0.006_084_241_340_412_836)),
+            ('\'', Prob(0.005_692_170_622_580_818)),
+            ('k', Prob(0.005_351_948_509_022_848)),
+            ('R', Prob(0.005_307_611_539_996_984)),
+            ('N', Prob(0.005_008_611_814_996_119)),
+            ('L', Prob(0.004_371_038_871_979_566_5)),
+            ('C', Prob(0.003_938_478_608_053_682_5)),
+            ('H', Prob(0.003_382_434_389_072_292_7)),
+            (';', Prob(0.003_151_039_381_305_078_7)),
+            ('W', Prob(0.003_022_242_318_391_103)),
+            ('M', Prob(0.002_907_918_894_126_066)),
+            ('D', Prob(0.002_873_292_087_738_098_4)),
+            ('B', Prob(0.002_823_825_221_469_572_6)),
+            ('U', Prob(0.002_588_582_790_770_362_2)),
+            ('P', Prob(0.002_187_351_542_147_877)),
+            ('F', Prob(0.002_145_945_942_974_963)),
+            ('G', Prob(0.002_045_363_314_895_627_5)),
+            ('?', Prob(0.001_919_314_411_218_792_2)),
+            ('Y', Prob(0.001_667_033_393_249_311_6)),
+            ('!', Prob(0.001_620_314_686_217_926_5)),
+            ('-', Prob(0.001_479_242_512_044_723_9)),
+            ('K', Prob(0.001_135_172_975_554_757_2)),
+            ('x', Prob(0.000_858_891_366_914_251_3)),
+            ('V', Prob(0.000_655_894_004_597_487_2)),
+            ('j', Prob(0.000_496_867_190_074_967_9)),
+            ('q', Prob(0.000_440_438_320_405_686_9)),
+            ('[', Prob(0.000_381_994_133_962_503)),
+            (']', Prob(0.000_380_528_449_036_028_2)),
+            ('J', Prob(0.000_378_696_342_877_934_63)),
+            (':', Prob(0.000_334_725_795_083_689_7)),
+            ('Q', Prob(0.000_215_822_105_423_418_97)),
+            ('z', Prob(0.000_201_348_466_774_48)),
+            ('9', Prob(0.000_173_683_663_787_267_55)),
+            ('1', Prob(0.000_170_019_451_471_080_48)),
+            (')', Prob(0.000_115_239_477_344_083_64)),
+            ('(', Prob(0.000_115_056_266_728_274_29)),
+            ('X', Prob(0.000_111_025_633_180_468_51)),
+            ('Z', Prob(0.000_097_468_047_610_576_31)),
+            ('"', Prob(0.000_086_108_989_430_396_36)),
+            ('<', Prob(0.000_085_742_568_198_777_65)),
+            ('>', Prob(0.000_080_795_881_571_925_1)),
+            ('2', Prob(0.000_067_055_085_386_223_55)),
+            ('3', Prob(0.000_060_459_503_217_086_81)),
+            ('0', Prob(0.000_054_779_974_126_996_84)),
+            ('4', Prob(0.000_017_038_587_270_269_92)),
+            ('5', Prob(0.000_015_023_270_496_367_025)),
+            ('_', Prob(0.000_013_007_953_722_464_131)),
+            ('*', Prob(0.000_011_542_268_795_989_3)),
+            ('6', Prob(0.000_011_542_268_795_989_3)),
+            ('7', Prob(0.000_007_511_635_248_183_512)),
+            ('8', Prob(0.000_007_328_424_632_374_159)),
+            ('|', Prob(0.000_006_045_950_321_708_681)),
+            ('&', Prob(0.000_003_847_422_931_996_433_5)),
+            ('@', Prob(0.000_001_465_684_926_474_831_8)),
+            ('/', Prob(0.000_000_916_053_079_046_769_8)),
+            ('}', Prob(0.000_000_366_421_231_618_707_95)),
+            ('`', Prob(0.000_000_183_210_615_809_353_98)),
+            ('#', Prob(0.000_000_183_210_615_809_353_98)),
+            ('~', Prob(0.000_000_183_210_615_809_353_98)),
+            ('%', Prob(0.000_000_183_210_615_809_353_98)),
+            ('=', Prob(0.000_000_183_210_615_809_353_98))
             ];
     }
 }
@@ -444,7 +508,7 @@ mod tests {
     use utils;
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
-    use dist::Distribution;
+    use dist::{GetUnderlying,Distribution};
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
     use itertools::{iterate,assert_equal};
@@ -505,7 +569,7 @@ mod tests {
         let computed_dist = dist::from_sample(&samples);
         assert!(
             utils::approx_equal(
-                *computed_dist.probabilities().get(&4).unwrap(),
+                computed_dist.get(&4).val(),
                 0.4
             )
         )
@@ -553,7 +617,7 @@ mod tests {
     fn compile_distribution_test() {
         let d = dist::from(&SHAKESPEARE);
         utils::approx_equal(
-            *d.probabilities().get(&'a').unwrap(), 
+            d.get(&'a').val(), 
             0.044825042106379775
         );
     }
