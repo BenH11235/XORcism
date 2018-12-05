@@ -99,22 +99,23 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
-        ->          ()//Result<(Vec<&'a K>, Vec<T>),&'static str>
+        ->          Vec<T>//Result<(Vec<&'a K>, Vec<T>),&'static str>
         where T: Glyph, K: Glyph {
             let klen_guess = guess_key_length(ct);
-            let x = 
+            //let x = 
             ct
             .iter()
             .unzipn(klen_guess)
             .into_iter()
             .map(|shred| {
-                let _s = shred.cloned().collect::<Vec<T>>();
-                simple_xor_break(&_s,ptspace,keyspace,comb).unwrap()
+                let svec:Vec<T> = shred.cloned().collect();
+                let (_, s) = simple_xor_break(&svec,ptspace,keyspace,comb).unwrap();
+                s.into_iter()
             }).collect::<Vec<_>>()
             .zipn()
-            .into_iter().map(|x| x.into_iter()).collect::<Vec<_>>()
+            .collect()
 
-            ;
+            //;
         }
 
 
