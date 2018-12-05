@@ -411,8 +411,9 @@ mod utils {
     }
         
     #[allow(dead_code)]    
-    pub fn approx_equal(target:f64,result:f64) -> bool {
-        (result-target).abs() < EPSILON
+    pub fn approx_equal<T>(target:T,result:T) -> bool 
+    where f64: From<T> {
+        (f64::from(result)-f64::from(target)).abs() < EPSILON
     }
 
 
@@ -507,7 +508,7 @@ mod tests {
     use utils;
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
-    use dist::{GetUnderlying,Distribution};
+    use dist::{Prob,Distribution};
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
     use itertools::{iterate,assert_equal};
@@ -568,8 +569,8 @@ mod tests {
         let computed_dist = dist::from_sample(&samples);
         assert!(
             utils::approx_equal(
-                computed_dist.get(&4).val(),
-                0.4
+                computed_dist.get(&4),
+                Prob(0.4)
             )
         )
     }
@@ -616,8 +617,8 @@ mod tests {
     fn compile_distribution_test() {
         let d = dist::from(&SHAKESPEARE);
         utils::approx_equal(
-            d.get(&'a').val(), 
-            0.044825042106379775
+            d.get(&'a'), 
+            Prob(0.044825042106379775)
         );
     }
 
