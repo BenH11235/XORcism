@@ -29,9 +29,9 @@ pub mod crypto {
             pub const EMPTY_KEYSPACE:&str = "Encountered Empty Keyspace";
         }
         
-        pub fn transform<IMG:Glyph,KEYCHAR:Glyph>
-        (buf:&[IMG], key:&[KEYCHAR], comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
-        -> Vec<IMG> {
+        pub fn transform<T:Glyph,K:Glyph>
+        (buf:&[T], key:&[K], comb: &impl Fn(&T,&K) -> T)
+        -> Vec<T> {
             let keylen = key.len();
             buf
             .iter()
@@ -40,19 +40,19 @@ pub mod crypto {
             .collect()
         }
         
-        pub fn encrypt<IMG:Glyph,KEYCHAR:Glyph>
-        (pt:&[IMG], key:&[KEYCHAR], comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
-        -> Vec<IMG> {
+        pub fn encrypt<T:Glyph,K:Glyph>
+        (pt:&[T], key:&[K], comb: &impl Fn(&T,&K) -> T)
+        -> Vec<T> {
             transform(&pt,&key,&comb)
         }
 
-        pub fn decrypt<IMG:Glyph,KEYCHAR:Glyph>
-        (ct:&[IMG], key:&[KEYCHAR], comb: &impl Fn(&IMG,&KEYCHAR) -> IMG)
-        -> Vec<IMG> {
+        pub fn decrypt<T:Glyph,K:Glyph>
+        (ct:&[T], key:&[K], comb: &impl Fn(&T,&K) -> T)
+        -> Vec<T> {
             transform(&ct,&key,&comb)
         }
 
-        pub fn key_len_score<IMG:Glyph>(ct:&[IMG],n:usize) -> f64 {
+        pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
             let indices_of_coincidence:Vec<f64> = 
                 ct
                 .iter()
@@ -60,12 +60,12 @@ pub mod crypto {
                 .iter()
                 .map(|shred|
                     dist::from_sample(
-                        & shred.clone().cloned().collect::<Vec<IMG>>()
+                        & shred.clone().cloned().collect::<Vec<T>>()
                     ).index_of_coincidence()
                 ).collect();
             indices_of_coincidence.iter().average()
         }
-        pub fn guess_key_length<IMG:Glyph>(ct:&[IMG]) -> usize {
+        pub fn guess_key_length<T:Glyph>(ct:&[T]) -> usize {
             let max_checked_len = (ct.len() as f64 / 5.0).floor() as usize;
             *iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
@@ -74,18 +74,18 @@ pub mod crypto {
         }
 
  
-        pub fn simple_xor_break<'a,IMG,KEYCHAR> (   
-        ct:         &       [IMG],
-        ptspace:    &       Distribution<IMG>,
-        keyspace:   &'a     Distribution<KEYCHAR>, 
-        comb:       &       impl Fn(&IMG,&KEYCHAR) -> IMG)   
-        ->          Result<(&'a KEYCHAR, Vec<IMG>),&'static str>
-        where IMG: Glyph, KEYCHAR: Glyph {
+        pub fn simple_xor_break<'a,T,K> (   
+        ct:         &       [T],
+        ptspace:    &       Distribution<T>,
+        keyspace:   &'a     Distribution<K>, 
+        comb:       &       impl Fn(&T,&K) -> T)   
+        ->          Result<(&'a K, Vec<T>),&'static str>
+        where T: Glyph, K: Glyph {
             keyspace
             .probabilities()
             .into_iter()
             .map(|(k,_)| { 
-                let kv:Vec<KEYCHAR> = once(k).cloned().collect(); 
+                let kv:Vec<K> = once(k).cloned().collect(); 
                 (k,decrypt(&ct, &kv, &comb))
             }).min_by(|(_,c1),(_,c2)| 
                 dist::surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
@@ -169,10 +169,10 @@ pub mod dist {
 
 
 
-    pub trait Distribution<IMG:Glyph> {
-        fn probabilities(&self) -> &HashMap<IMG,Prob>;
+    pub trait Distribution<T:Glyph> {
+        fn probabilities(&self) -> &HashMap<T,Prob>;
     
-        fn get(&self, key:&IMG) -> Prob {
+        fn get(&self, key:&T) -> Prob {
             *self.probabilities()
             .get(key)
             .unwrap_or(&Prob(0.0))
@@ -185,7 +185,7 @@ pub mod dist {
             .sum()
         }
 
-        fn surprise(&self, events:&[IMG]) -> Result<f64,err::Msg> {
+        fn surprise(&self, events:&[T]) -> Result<f64,err::Msg> {
             events
             .iter()
             .map(|e| self.get(e).surprise())
@@ -193,7 +193,7 @@ pub mod dist {
         }
 
         fn display(&self) -> String {
-            let p_disp = |(i,p):(&IMG,&Prob)| format!("Item '{}' with probability {}", i, p);
+            let p_disp = |(i,p):(&T,&Prob)| format!("Item '{}' with probability {}", i, p);
             let items = self.probabilities().iter().map(p_disp);
             once(String::from("Distribution {"))
             .chain(items)
@@ -222,38 +222,38 @@ pub mod dist {
     //Maybe impl these as From<T> trait?
 
 
-    pub fn from<IMG:Glyph>(v:&[(IMG,Prob)]) -> impl Distribution<IMG> {
+    pub fn from<T:Glyph>(v:&[(T,Prob)]) -> impl Distribution<T> {
         _Distribution {
-            probabilities : v.into_iter().cloned().collect::<HashMap<IMG,Prob>>()
+            probabilities : v.into_iter().cloned().collect::<HashMap<T,Prob>>()
         }
     }
  
-    pub fn from_sample<IMG:Glyph>(v:&[IMG]) -> impl Distribution<IMG> {
+    pub fn from_sample<T:Glyph>(v:&[T]) -> impl Distribution<T> {
         from( 
             &v
             .iter()
-            .cloned() //else we get a Counter<&IMG>
-            .collect::<Counter<IMG>>()
+            .cloned() //else we get a Counter<&T>
+            .collect::<Counter<T>>()
             .most_common_ordered()
             .into_iter()
             .map(|(x,count)| (
                 x,
                 Prob(count as f64 / v.len() as f64)
-            )).collect::<Vec<(IMG,Prob)>>()
+            )).collect::<Vec<(T,Prob)>>()
         )
     }
 
-    pub fn uniform<IMG: Glyph>(v:&[IMG]) -> impl Distribution<IMG> {
+    pub fn uniform<T: Glyph>(v:&[T]) -> impl Distribution<T> {
         let p = Prob((v.len() as f64).recip());
-        from(&v.iter().cloned().zip(repeat(p)).collect::<Vec<(IMG,Prob)>>())
+        from(&v.iter().cloned().zip(repeat(p)).collect::<Vec<(T,Prob)>>())
     }
 
-    struct _Distribution<IMG> where IMG: Glyph {
-        probabilities : HashMap<IMG,Prob>
+    struct _Distribution<T> where T: Glyph {
+        probabilities : HashMap<T,Prob>
     }
     
-    impl<IMG> Distribution<IMG> for _Distribution<IMG> where IMG: Glyph {
-        fn probabilities(&self) -> &HashMap<IMG,Prob> {
+    impl<T> Distribution<T> for _Distribution<T> where T: Glyph {
+        fn probabilities(&self) -> &HashMap<T,Prob> {
             &self.probabilities
         }
     }
