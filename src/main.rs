@@ -126,7 +126,7 @@ pub mod dist {
     #[derive(Add,Mul,AddAssign,MulAssign,Debug,Display,From,Clone,Copy,Into)]
     pub struct Prob(pub _Prob);
     impl Prob {
-        fn surprise(&self) -> Result<f64,err::Msg> {
+        fn surprise(self) -> Result<f64,err::Msg> {
             let p = self.val();
             match (fcmp(p,0.0), fcmp(p,1.0)) {
                 (Less,Less)|(Greater,Greater) => 
