@@ -173,10 +173,9 @@ pub mod dist {
         fn probabilities(&self) -> &HashMap<IMG,Prob>;
     
         fn get(&self, key:&IMG) -> Prob {
-            self.probabilities()
+            *self.probabilities()
             .get(key)
             .unwrap_or(&Prob(0.0))
-            .clone()
         }
 
         fn index_of_coincidence(&self) -> f64 {
