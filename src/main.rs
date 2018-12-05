@@ -21,12 +21,12 @@ pub mod crypto {
     pub mod vigenere {
         use std::iter::once;
         use itertools::iterate;
-        use utils::{Average,FMax,Glyph,UnzipN};
+        use utils::{Average,FMax,Glyph,ZipN,UnzipN};
         use dist;
         use dist::Distribution;
 
         mod err {
-            type Msg = &'static str;
+            pub type Msg = &'static str;
             pub const EMPTY_KEYSPACE:&str = 
                 "Encountered Empty Keyspace";
         }
@@ -99,15 +99,22 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
-        ->          () //Result<(Vec<&'a K>, Vec<T>),&'static str>
+        ->          ()//Result<(Vec<&'a K>, Vec<T>),&'static str>
         where T: Glyph, K: Glyph {
             let klen_guess = guess_key_length(ct);
-            let (keychars, pt_shreds) = 
-                ct
-                .iter()
-                .unzipn(klen_guess)
-                .map(|shred| simple_xor_break(ct,ptspace,keyspace,comb))
-                .unzip();
+            let x = 
+            ct
+            .iter()
+            .unzipn(klen_guess)
+            .into_iter()
+            .map(|shred| {
+                let _s = shred.cloned().collect::<Vec<T>>();
+                simple_xor_break(&_s,ptspace,keyspace,comb).unwrap()
+            }).collect::<Vec<_>>()
+            .zipn()
+            .into_iter().map(|x| x.into_iter()).collect::<Vec<_>>()
+
+            ;
         }
 
 
