@@ -102,7 +102,6 @@ pub mod crypto {
         ->          Vec<T>//Result<(Vec<&'a K>, Vec<T>),&'static str>
         where T: Glyph, K: Glyph {
             let klen_guess = guess_key_length(ct);
-            //let x = 
             ct
             .iter()
             .unzipn(klen_guess)
@@ -114,8 +113,6 @@ pub mod crypto {
             }).collect::<Vec<_>>()
             .zipn()
             .collect()
-
-            //;
         }
 
 
@@ -672,6 +669,22 @@ mod tests {
         assert_eq!(pt,pt2);
     }
 
+    #[test]
+    fn full_break_test() {
+        let pt:Vec<char> = 
+            "It was a bright cold day in April, and the clocks were striking thirteen."
+            .chars().collect();
+        let key:Vec<char> = "key".chars().collect();
+        let ct = vigenere::encrypt(&pt,&key,&chrxor);
+        let ptspace = dist::from(&SHAKESPEARE);
+        let keyspace = dist::uniform(
+            &(0..=255)
+            .map(|x| char::from(x))
+            .collect::<Vec<char>>()
+        );
+        let pt2 = vigenere::full_break(&ct,&ptspace,&keyspace,&chrxor);
+        assert_eq!(pt,pt2);
+    }
 
 }
 
