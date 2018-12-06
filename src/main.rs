@@ -626,8 +626,10 @@ mod tests {
 
     #[test]
     fn guess_keylen_test() {
-        let pt:Vec<char> = repeat('A').take(80).collect();        
-        let key = vec!['i', 'a', 'm', 'a', 'k', 'e', 'y'];
+        let pt:Vec<char> = 
+            "It was the best of times, it was the worst of times."
+            .chars().collect();
+        let key:Vec<char> = "key".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let g_klen = vigenere::guess_key_length(&ct);
         assert_eq!(g_klen, key.len());
@@ -653,7 +655,7 @@ mod tests {
     #[test]
     fn simple_xor_break_test() {
         let pt:Vec<char> = 
-            "It was the best of times, it was the worst of times."
+            "It was a bright cold day in April, and the clocks were striking thirteen."
             .chars().collect();
         let key:Vec<char> = "k".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
