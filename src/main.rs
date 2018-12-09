@@ -18,9 +18,11 @@ pub mod crypto {
         .collect()
     }
     
+    pub const SAMPLE_TEXT:&str = "Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
+    
     pub mod vigenere {
         use std::iter::once;
-        use itertools::iterate;
+        use itertools::{iterate,Itertools};
         use utils::{Average,FMax,Glyph,ZipN,UnzipN};
         use dist;
         use dist::Distribution;
@@ -54,6 +56,32 @@ pub mod crypto {
             transform(&ct,&key,&comb)
         }
 
+        /*
+
+        3:: 6818 / 111930 -> conf 0.0595
+        6: 3351 / 55760 -> conf 0.0581
+        9: 2273 / 37037 -> conf 0.0589
+
+        */
+
+
+        pub fn key_len_score_2<T:Glyph>(ct:&[T],n:usize) -> f64 {
+            let (opportunities, coincidences) = 
+            ct
+            .iter()
+            .unzipn(n)
+            .into_iter()
+            .flat_map(|shred| shred.combinations(2))
+            .fold(
+                (0,0),
+                |(o,c),v| (
+                    o+1,
+                    c + match v[0]==v[1] {true => 1, false => 0}
+                )
+            );
+            coincidences as f64 / opportunities as f64
+        }
+
         pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
             let indices_of_coincidence:Vec<f64> = 
                 ct
@@ -72,7 +100,7 @@ pub mod crypto {
             *iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
             .collect::<Vec<usize>>().iter() //TODO: Get rid of this
-            .fmax(&|&keylen| key_len_score(&ct,keylen))
+            .fmax(&|&keylen| key_len_score_2(&ct,keylen))
         }
 
  
@@ -530,6 +558,7 @@ mod tests {
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
     use dist::{Prob,Distribution};
+    use crypto;
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
     use itertools::{iterate,assert_equal};
@@ -654,9 +683,7 @@ mod tests {
 
     #[test]
     fn simple_xor_break_test() {
-        let pt:Vec<char> = 
-            "It was a bright cold day in April, and the clocks were striking thirteen."
-            .chars().collect();
+        let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
         let key:Vec<char> = "k".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let ptspace = dist::from(&SHAKESPEARE);
@@ -673,9 +700,7 @@ mod tests {
 
     #[test]
     fn full_break_test() {
-        let pt:Vec<char> = 
-            "It was a bright cold day in April, and the clocks were striking thirteen."
-            .chars().collect();
+        let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
         let key:Vec<char> = "key".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let ptspace = dist::from(&SHAKESPEARE);
