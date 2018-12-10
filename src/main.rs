@@ -18,14 +18,14 @@ pub mod crypto {
         .collect()
     }
     
-    pub const SAMPLE_TEXT:&str = "Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
+    pub const SAMPLE_TEXT:&str = "Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?";//\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
     
     pub mod vigenere {
         use std::iter::once;
         use itertools::{iterate,Itertools};
         use utils::{Average,FMax,Glyph,ZipN,UnzipN};
         use dist;
-        use dist::Distribution;
+        use dist::{Distribution,binomial_p_estimate};
 
         mod err {
             pub type Msg = &'static str;
@@ -57,12 +57,26 @@ pub mod crypto {
         }
 
         /*
+         *
+         * Trying to use 95% confidence interval:
 
         3:: 6818 / 111930 -> conf 0.0595
         6: 3351 / 55760 -> conf 0.0581
         9: 2273 / 37037 -> conf 0.0589
 
         */
+
+
+        /*
+         * Trying to use surprise:
+         * Using a key of size 3:
+         * guess 3 -> 88695 trials, 5642 coincidences = 15316 bit
+         * guess 9 -> 29322 trials, 1904 coincidences = 2213 bit
+         *
+         * Using a key of size 9:
+         * guess 3 -> 88695 trials, 3414 coincidences = 6931 bit
+         * guess 9 ->  same statistics as before =(
+         */
 
 
         pub fn key_len_score_2<T:Glyph>(ct:&[T],n:usize) -> f64 {
@@ -79,7 +93,11 @@ pub mod crypto {
                     c + match v[0]==v[1] {true => 1, false => 0}
                 )
             );
-            coincidences as f64 / opportunities as f64
+            let score = binomial_p_estimate(opportunities,coincidences).0;
+            if score > 0.05 {
+                println!("Key length: {}, Opportunities: {}, Coincidences: {}, Score: {}", n, opportunities, coincidences, score);
+            };
+            score
         }
 
         pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
@@ -100,7 +118,9 @@ pub mod crypto {
             *iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
             .collect::<Vec<usize>>().iter() //TODO: Get rid of this
-            .fmax(&|&keylen| key_len_score_2(&ct,keylen))
+            .filter(|&keylen| key_len_score_2(&ct,*keylen) > 0.05)
+            .next().unwrap()
+            //.fmax(&|&keylen| key_len_score_2(&ct,keylen))
         }
 
  
@@ -211,6 +231,22 @@ pub mod dist {
             Prob(self.val() / other)
         }
     }
+
+    pub fn binomial_p_estimate(trials:usize, successes:usize) -> Prob {
+        let zval = 1.96; //z value for 95% confidence interval
+        let naive_p = successes as f64 / trials as f64;
+        Prob(
+            naive_p 
+            -zval 
+            *(
+                (
+                    (naive_p * (1.0-naive_p))
+                    /(trials as f64)
+                ).sqrt()
+            )
+        )
+    }
+
 
     trait Pow<T> {
         fn pow(&self,other:T) -> Self;
@@ -547,6 +583,7 @@ mod utils {
 
         }
     }
+
 }
 
 
@@ -557,7 +594,7 @@ mod tests {
     use utils;
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
-    use dist::{Prob,Distribution};
+    use dist::{Prob,Distribution,binomial_p_estimate};
     use crypto;
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
@@ -655,10 +692,8 @@ mod tests {
 
     #[test]
     fn guess_keylen_test() {
-        let pt:Vec<char> = 
-            "It was the best of times, it was the worst of times."
-            .chars().collect();
-        let key:Vec<char> = "key".chars().collect();
+        let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
+        let key:Vec<char> = "keyninlet".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let g_klen = vigenere::guess_key_length(&ct);
         assert_eq!(g_klen, key.len());
@@ -698,6 +733,7 @@ mod tests {
         assert_eq!(pt,pt2);
     }
 
+    #[cfg(ignore)]
     #[test]
     fn full_break_test() {
         let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
@@ -711,6 +747,14 @@ mod tests {
         );
         let pt2 = vigenere::full_break(&ct,&ptspace,&keyspace,&chrxor);
         assert_eq!(pt,pt2);
+    }
+
+    #[test]
+    fn binomial_p_estimate_test() {
+        let trials = 50;
+        let successes = 29;
+        let est_prob = binomial_p_estimate(trials,successes);
+        utils::approx_equal(est_prob, Prob(0.44));
     }
 
 }
