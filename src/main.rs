@@ -83,7 +83,8 @@ pub mod crypto {
             .iter()
             .unzipn(n)
             .into_iter()
-            .flat_map(|shred| shred.combinations(2))
+            .flat_map(
+                |shred| shred.combinations(2))
             .fold(
                 (0,0),
                 |(o,c),v| (
@@ -107,7 +108,7 @@ pub mod crypto {
                 .map(|shred|
                     dist::from_sample(
                         & shred.clone().cloned().collect::<Vec<T>>()
-                    ).index_of_coincidence()
+                    ).approx_kappa()
                 ).collect();
             indices_of_coincidence.iter().average()
         }
@@ -268,7 +269,7 @@ pub mod dist {
             .unwrap_or(&Prob(0.0))
         }
 
-        fn index_of_coincidence(&self) -> f64 {
+        fn approx_kappa(&self) -> f64 {
             self.probabilities()
             .iter()
             .map(|(_,p)| p.pow(2.0).val())
@@ -293,6 +294,20 @@ pub mod dist {
         }
 
 
+    }
+
+    pub fn kappa<T:Glyph>(v:&[T]) -> f64 {
+        let pairs = |x:usize| (x*(x-1))/2;
+        let coincidences:usize = 
+            v
+            .iter()
+            .cloned() //else we get a Counter<&T>
+            .collect::<Counter<T>>()
+            .iter()
+            .map(|(_,n)| pairs(*n))
+            .sum();
+        let possible_coincidences = pairs(v.len());
+        coincidences as f64 / possible_coincidences as f64
     }
 
 
@@ -594,7 +609,7 @@ mod tests {
     use utils;
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
-    use dist::{Prob,Distribution,binomial_p_estimate};
+    use dist::{Prob,Distribution,binomial_p_estimate,kappa};
     use crypto;
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
@@ -638,12 +653,24 @@ mod tests {
     }
 
     #[test]
-    fn coincidence_test() {
+    fn approx_kappa_test() {
         let ud = dist::uniform(&iterate(0, |x| x+1).take(10).collect::<Vec<i32>>());
         assert!(
             utils::approx_equal(
-                ud.index_of_coincidence(),
+                ud.approx_kappa(),
                 0.1
+            )
+        )
+    }
+
+    #[test]
+    fn exact_kappa_test() {
+        let samples:Vec<usize> = 
+            iterate(0, |x| x+1).take(5).cycle().take(50).collect();
+        assert!(
+            utils::approx_equal(
+                kappa(&samples),
+                0.183_673_469_387_755
             )
         )
     }
