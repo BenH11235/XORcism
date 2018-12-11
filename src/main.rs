@@ -17,9 +17,7 @@ pub mod crypto {
         .map(|(c1,c2)| chrxor(&c1,&c2))
         .collect()
     }
-    
-    pub const SAMPLE_TEXT:&str = "Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?";//\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
-    
+       
     pub mod vigenere {
         use std::iter::once;
         use itertools::{iterate,Itertools};
@@ -601,7 +599,9 @@ mod tests {
     use crypto::{vigenere,chrxor};
     use std::iter::repeat;
     use itertools::{iterate,assert_equal};
-    
+   
+    pub const SAMPLE_TEXT:&str = "Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
+  
     #[test]
     fn zipn_test() {
         let vec_of_iters = 
@@ -694,8 +694,8 @@ mod tests {
 
     #[test]
     fn guess_keylen_test() {
-        let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
-        let key:Vec<char> = "keyninlet".chars().collect();
+        let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
+        let key:Vec<char> = "longerkey".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let g_klen = vigenere::guess_key_length(&ct);
         assert_eq!(g_klen, key.len());
@@ -720,7 +720,7 @@ mod tests {
 
     #[test]
     fn simple_xor_break_test() {
-        let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
+        let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
         let key:Vec<char> = "k".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let ptspace = dist::from(&SHAKESPEARE);
@@ -737,7 +737,7 @@ mod tests {
 
     #[test]
     fn full_break_test() {
-        let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
+        let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
         let key:Vec<char> = "key".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let ptspace = dist::from(&SHAKESPEARE);
