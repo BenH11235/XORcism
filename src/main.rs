@@ -735,7 +735,6 @@ mod tests {
         assert_eq!(pt,pt2);
     }
 
-    #[cfg(ignore)]
     #[test]
     fn full_break_test() {
         let pt:Vec<char> = crypto::SAMPLE_TEXT.chars().collect();
