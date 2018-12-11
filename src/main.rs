@@ -77,7 +77,7 @@ pub mod crypto {
          */
 
 
-        pub fn key_len_score_2<T:Glyph>(ct:&[T],n:usize) -> f64 {
+        pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
             let scores = 
             ct
             .iter()
@@ -89,25 +89,11 @@ pub mod crypto {
             scores.iter().average()
         }
 
-        pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
-            let indices_of_coincidence:Vec<f64> = 
-                ct
-                .iter()
-                .unzipn(n)
-                .iter()
-                .map(|shred|
-                    dist::from_sample(
-                        & shred.clone().cloned().collect::<Vec<T>>()
-                    ).approx_kappa()
-                ).collect();
-            indices_of_coincidence.iter().average()
-        }
-
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> usize {
             let max_checked_len = (ct.len() as f64 / 5 as f64) as usize;
             let num_finalists = 
                 (max_checked_len as f64 / 10 as f64).ceil() as usize;
-            let ksc = |l| key_len_score_2(&ct,l);
+            let ksc = |l| key_len_score(&ct,l);
             *iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
             .sorted_by(|&l1, &l2| fcmp(ksc(l1),ksc(l2)).reverse())
@@ -754,7 +740,6 @@ mod tests {
         assert_eq!(pt,pt2);
     }
 
-    #[cfg(ignore)]
     #[test]
     fn full_break_test() {
         let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
