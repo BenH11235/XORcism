@@ -54,28 +54,6 @@ pub mod crypto {
             transform(&ct,&key,&comb)
         }
 
-        /*
-         *
-         * Trying to use 95% confidence interval:
-
-        3:: 6818 / 111930 -> conf 0.0595
-        6: 3351 / 55760 -> conf 0.0581
-        9: 2273 / 37037 -> conf 0.0589
-
-        */
-
-
-        /*
-         * Trying to use surprise:
-         * Using a key of size 3:
-         * guess 3 -> 88695 trials, 5642 coincidences = 15316 bit
-         * guess 9 -> 29322 trials, 1904 coincidences = 2213 bit
-         *
-         * Using a key of size 9:
-         * guess 3 -> 88695 trials, 3414 coincidences = 6931 bit
-         * guess 9 ->  same statistics as before =(
-         */
-
 
         pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
             let scores = 
@@ -126,7 +104,7 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
-        ->          Vec<T>//Result<(Vec<&'a K>, Vec<T>),&'static str>
+        ->          Vec<T>
         where T: Glyph, K: Glyph {
             let klen_guess = guess_key_length(ct);
             ct
@@ -690,8 +668,8 @@ mod tests {
 
     #[test]
     fn encrypt_decrypt_test() {
-        let pt_initial = vec!['h', 'e', 'l', 'l', 'o', 'w', 'o','r', 'l', 'd'];
-        let key = vec!['k', 'e', 'y'];
+        let pt_initial:Vec<char> = "helloworld".chars().collect();
+        let key:Vec<char> = "key".chars().collect();
         let ct = vigenere::encrypt(&pt_initial,&key,&chrxor);
         let pt_final = vigenere::decrypt(&ct,&key,&chrxor);
         assert_eq!(pt_initial, pt_final);
