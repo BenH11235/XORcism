@@ -68,7 +68,7 @@ pub mod crypto {
         }
 
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> usize {
-            let max_checked_len = (ct.len() as f64 / 5 as f64) as usize;
+            let max_checked_len = (ct.len() as f64 / 20 as f64) as usize;
             let num_finalists = 
                 (max_checked_len as f64 / 10 as f64).ceil() as usize;
             let ksc = |l| key_len_score(&ct,l);
