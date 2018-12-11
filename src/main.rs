@@ -23,7 +23,7 @@ pub mod crypto {
     pub mod vigenere {
         use std::iter::once;
         use itertools::{iterate,Itertools};
-        use utils::{Average,FMax,Glyph,ZipN,UnzipN};
+        use utils::{Average,FMax,Glyph,ZipN,UnzipN,fcmp};
         use dist;
         use dist::{Distribution,binomial_p_estimate};
 
@@ -113,14 +113,16 @@ pub mod crypto {
                 ).collect();
             indices_of_coincidence.iter().average()
         }
+
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> usize {
             let max_checked_len = (ct.len() as f64 / 5.0).floor() as usize;
+            let ksc = |l| key_len_score_2(&ct,l);
             *iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
-            .collect::<Vec<usize>>().iter() //TODO: Get rid of this
-            .filter(|&keylen| key_len_score_2(&ct,*keylen) > 0.05)
-            .next().unwrap()
-            //.fmax(&|&keylen| key_len_score_2(&ct,keylen))
+            .sorted_by(|&l1, &l2| fcmp(ksc(l1),ksc(l2)).reverse())
+            .iter()
+            .take(5)
+            .min().unwrap()
         }
 
  
