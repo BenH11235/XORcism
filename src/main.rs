@@ -25,6 +25,9 @@ pub mod crypto {
         use dist;
         use dist::{Distribution,kappa};
 
+        const MINIMUM_SHRED_LENGTH:usize = 7;
+        const PERCENTAGE_OF_GRADUATING_KEYS:usize = 10;
+
         mod err {
             pub type Msg = &'static str;
             pub const EMPTY_KEYSPACE:&str = 
@@ -72,11 +75,18 @@ pub mod crypto {
         }
 
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Result<usize,err::Msg> {
-            let max_checked_len = (ct.len() as f64 / 20 as f64).floor() as usize;
+            let max_checked_len = 
+                (ct.len() as f64 
+                / MINIMUM_SHRED_LENGTH as f64
+                ).floor() 
+                as usize;
             if max_checked_len == 0 {
                 return Err(err::CIPHERTEXT_TOO_SHORT);
             } let num_finalists = 
-                (max_checked_len as f64 / 10 as f64).ceil() as usize;
+                (max_checked_len as f64 
+                / PERCENTAGE_OF_GRADUATING_KEYS as f64
+                ).ceil() 
+                as usize;
             let ksc = |l| key_len_score(&ct,l);
             iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
