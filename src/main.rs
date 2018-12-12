@@ -29,6 +29,10 @@ pub mod crypto {
             pub type Msg = &'static str;
             pub const EMPTY_KEYSPACE:&str = 
                 "Encountered Empty Keyspace";
+            pub const CIPHERTEXT_TOO_SHORT:&str = 
+                "Minimum ciphertext length is 20 characters.";
+            pub const MATHEMATICAL_PARADOX:&str =
+                "Congratulations, you have broken mathematics";
         }
         
         pub fn transform<T:Glyph,K:Glyph>
@@ -67,17 +71,21 @@ pub mod crypto {
             scores.iter().average()
         }
 
-        pub fn guess_key_length<T:Glyph>(ct:&[T]) -> usize {
-            let max_checked_len = (ct.len() as f64 / 20 as f64) as usize;
-            let num_finalists = 
+        pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Result<usize,err::Msg> {
+            let max_checked_len = (ct.len() as f64 / 20 as f64).floor() as usize;
+            if max_checked_len == 0 {
+                return Err(err::CIPHERTEXT_TOO_SHORT);
+            } let num_finalists = 
                 (max_checked_len as f64 / 10 as f64).ceil() as usize;
             let ksc = |l| key_len_score(&ct,l);
-            *iterate(1, |keylen| keylen+1)
+            iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
             .sorted_by(|&l1, &l2| fcmp(ksc(l1),ksc(l2)).reverse())
             .iter()
             .take(num_finalists)
-            .min().unwrap()
+            .min()
+            .map(|x| *x)
+            .ok_or(err::MATHEMATICAL_PARADOX)
         }
 
  
@@ -104,20 +112,22 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
-        ->          Vec<T>
+        ->          Result<Vec<T>,err::Msg>
         where T: Glyph, K: Glyph {
-            let klen_guess = guess_key_length(ct);
-            ct
-            .iter()
-            .unzipn(klen_guess)
-            .into_iter()
-            .map(|shred| {
-                let svec:Vec<T> = shred.cloned().collect();
-                let (_, s) = simple_xor_break(&svec,ptspace,keyspace,comb).unwrap();
-                s.into_iter()
-            }).collect::<Vec<_>>()
-            .zipn()
-            .collect()
+            let klen_guess = guess_key_length(ct)?;
+            let derived_pt =
+                ct
+                .iter()
+                .unzipn(klen_guess)
+                .into_iter()
+                .map(|shred| {
+                    let svec:Vec<T> = shred.cloned().collect();
+                    let (_, s) = simple_xor_break(&svec,ptspace,keyspace,comb).unwrap();
+                    s.into_iter()
+                }).collect::<Vec<_>>()
+                .zipn()
+                .collect();
+            Ok(derived_pt)
         }
 
 
@@ -681,7 +691,7 @@ mod tests {
         let key:Vec<char> = "longerkey".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
         let g_klen = vigenere::guess_key_length(&ct);
-        assert_eq!(g_klen, key.len());
+        assert_eq!(g_klen, Ok(key.len()));
     }
 
     use dist::known::SHAKESPEARE;
@@ -729,7 +739,7 @@ mod tests {
             .map(|x| char::from(x))
             .collect::<Vec<char>>()
         );
-        let pt2 = vigenere::full_break(&ct,&ptspace,&keyspace,&chrxor);
+        let pt2 = vigenere::full_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
         assert_eq!(pt,pt2);
     }
 
