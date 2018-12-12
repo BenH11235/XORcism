@@ -21,7 +21,7 @@ pub mod crypto {
     pub mod vigenere {
         use std::iter::once;
         use itertools::{iterate,Itertools};
-        use utils::{Average,FMax,Glyph,ZipN,UnzipN,fcmp};
+        use utils::{Glyph,ZipN,UnzipN,fcmp};
         use dist;
         use dist::{Distribution,kappa};
 
@@ -88,7 +88,7 @@ pub mod crypto {
             .iter()
             .take(num_finalists)
             .min()
-            .map(|x| *x)
+            .cloned()
             .ok_or(err::MATHEMATICAL_PARADOX)
         }
 
@@ -584,9 +584,7 @@ mod tests {
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
     use dist::{Prob,Distribution,binomial_p_estimate,kappa};
-    use crypto;
     use crypto::{vigenere,chrxor};
-    use std::iter::repeat;
     use itertools::{iterate,assert_equal};
    
     pub const SAMPLE_TEXT:&str = "Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
