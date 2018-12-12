@@ -63,15 +63,9 @@ pub mod crypto {
 
 
         pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
-            let scores = 
-            ct
-            .iter()
-            .unzipn(n)
-            .iter()
-            .map(|shred| 
-                kappa(&shred.clone().collect::<Vec<&T>>())
-            ).collect::<Vec<f64>>();
-            scores.iter().average()
+            let shreds = ct.iter().unzipn(n);
+            let first_shred = shreds.iter().next().unwrap();
+            kappa(first_shred)
         }
 
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Result<usize,err::Msg> {
@@ -154,7 +148,7 @@ pub mod dist {
     use std::collections::*;
     use std::iter::*;
     use itertools::Itertools;
-    use utils::{fcmp,Glyph};
+    use utils::{fcmp,Glyph,Iter};
     use counter::Counter;
 
     mod err {
@@ -272,18 +266,22 @@ pub mod dist {
 
     }
 
-    pub fn kappa<T:Glyph>(v:&[T]) -> f64 {
+    pub fn kappa<'a,T:'a,IT>(v:&IT) -> f64 
+    where T:    Glyph,
+          IT:   Iter<&'a T>
+    {
         let pairs = |x:usize| (x*(x-1))/2;
-        let coincidences:usize = 
+        let counts:Counter<T> = 
             v
-            .iter()
+            .clone() //don't want to exhaust by computing kappa
             .cloned() //else we get a Counter<&T>
-            .collect::<Counter<T>>()
+            .collect();
+        let (samples,coincidences):(usize,usize) =
+            counts
             .iter()
-            .map(|(_,n)| pairs(*n))
-            .sum();
-        let possible_coincidences = pairs(v.len());
-        coincidences as f64 / possible_coincidences as f64
+            .fold((0,0), |(s,o),(_,n)| (s+n, o+pairs(*n)));
+        let opportunities:usize = pairs(samples);
+        coincidences as f64 / opportunities as f64
     }
 
 
@@ -645,7 +643,7 @@ mod tests {
             iterate(0, |x| x+1).take(5).cycle().take(50).collect();
         assert!(
             utils::approx_equal(
-                kappa(&samples),
+                kappa(&samples.iter()),
                 0.183_673_469_387_755
             )
         )
