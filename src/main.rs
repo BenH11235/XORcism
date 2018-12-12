@@ -763,4 +763,5 @@ mod tests {
 
 
 fn main() {
+    ;
 }
