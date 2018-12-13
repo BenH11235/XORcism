@@ -29,6 +29,8 @@ pub mod crypto {
         const MAXIMUM_SHRED_SAMPLE_LENGTH:usize = 50;
         const PERCENTAGE_OF_GRADUATING_KEYS:usize = 10;
 
+        type Maybe<T> = Result<T,err::Msg>;
+
         mod err {
             pub type Msg = &'static str;
             pub const EMPTY_KEYSPACE:&str = 
@@ -67,7 +69,7 @@ pub mod crypto {
         }
 
 
-        pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> Result<f64,err::Msg> {
+        pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> Maybe<f64> {
             if n==0 {
                 return Err(err::INVALID_INPUT);
             } let shreds = ct.iter().unzipn(n);
@@ -78,7 +80,7 @@ pub mod crypto {
             }
         }
 
-        pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Result<usize,err::Msg> {
+        pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Maybe<usize> {
             let max_checked_len = 
                 (ct.len() as f64 / MINIMUM_SHRED_LENGTH as f64).floor() as usize;
             
@@ -86,7 +88,7 @@ pub mod crypto {
                 (max_checked_len as f64 / PERCENTAGE_OF_GRADUATING_KEYS as f64)
                 .ceil() as usize;
            
-            let lengths_and_scores: Result<Vec<(usize,f64)>,err::Msg> = 
+            let lengths_and_scores: Maybe<Vec<(usize,f64)>> = 
                 iterate(1, |keylen| keylen+1)
                 .take_while(|&keylen| keylen < max_checked_len)
                 .map(|l| 
@@ -112,7 +114,7 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
-        ->          Result<(&'a K, Vec<T>),err::Msg>
+        ->          Maybe<(&'a K, Vec<T>)>
         where T: Glyph, K: Glyph {
             keyspace
             .probabilities()
@@ -130,10 +132,10 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
-        ->          Result<Vec<T>,err::Msg>
+        ->          Maybe<Vec<T>>
         where T: Glyph, K: Glyph {
             let klen_guess = guess_key_length(ct)?;
-            let derived_shreds : Result<Vec<_>,err::Msg> = 
+            let derived_shreds : Maybe<Vec<_>> = 
                 ct
                 .iter()
                 .unzipn(klen_guess)
@@ -164,6 +166,8 @@ pub mod dist {
     use utils::{fcmp,Glyph,Iter};
     use counter::Counter;
 
+    type Maybe<T> = Result<T,err::Msg>;
+
     mod err {
         pub type Msg = &'static str;
         pub const PROBABILITY_OUT_OF_BOUNDS:&str =
@@ -184,7 +188,7 @@ pub mod dist {
     #[derive(Add,Mul,AddAssign,MulAssign,Debug,Display,From,Clone,Copy,Into)]
     pub struct Prob(pub _Prob);
     impl Prob {
-        fn surprise(self) -> Result<f64,err::Msg> {
+        fn surprise(self) -> Maybe<f64> {
             let p = self.val();
             match (fcmp(p,0.0), fcmp(p,1.0)) {
                 (Less,Less)|(Greater,Greater) => 
@@ -259,7 +263,7 @@ pub mod dist {
             .sum()
         }
 
-        fn surprise(&self, events:&[T]) -> Result<f64,err::Msg> {
+        fn surprise(&self, events:&[T]) -> Maybe<f64> {
             events
             .iter()
             .map(|e| self.get(e).surprise())
@@ -302,7 +306,7 @@ pub mod dist {
 
 
 
-    pub fn surprisecmp(sup1:&Result<f64,err::Msg>,sup2:&Result<f64,err::Msg>) 
+    pub fn surprisecmp(sup1:&Maybe<f64>,sup2:&Maybe<f64>) 
     -> Ordering {
         use self::err::{INFINITE_SURPRISE, MALFORMED_SURPRISE_CMP};
         match (sup1,sup2) {
