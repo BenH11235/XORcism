@@ -89,10 +89,10 @@ pub mod crypto {
                 / PERCENTAGE_OF_GRADUATING_KEYS as f64
                 ).ceil() 
                 as usize;
-            let ksc = |l| key_len_score(&ct,l);
+            let ksc = |l| key_len_score(&ct,l).unwrap();
             iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
-            .sorted_by(|&l1, &l2| fcmp(ksc(l1).unwrap(),ksc(l2).unwrap()).reverse())
+            .sorted_by(|&l1, &l2| fcmp(ksc(l1),ksc(l2)).reverse())
             .iter()
             .take(num_finalists)
             .min()
