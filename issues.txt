@@ -1,4 +1,28 @@
+Must-have before shipping
+
+* Documentation
+
+* Add support to base64, hexadecimal
+
+* Add command line capacity
+
+* If possible, split modules into separate files
+
+
+
+Nice to have later
+
+* Change arbitrary limits on minimum and maximum shred lengths into ones based on the unicity distance
+
+* Provide sequence of possible solutions instead of single solution
+
+* Make key choice take into account the issue of divisibility. E.g. sort by increasing score; create cutoff where largest disparity takes place; all keys above the cutoff graduate; start iterating on 'trees' of key lengths 
+
+* Full mathematical analysis of "coincidence" distribution? (Science fiction, even if you solve the naive problem you still have the issue of 'leaky probabilities', if key size = 2 how does this affect the distribution of coincidences for key size = 7? The answer exists in theory but will involve the word 'coprime')
+
+
+Won't fix
 
 * Replace raw index of coincidence with modeling as bernoulli variable, which can naturally account for length of block vs number of coincidences
+Won't fix reason: Not enough mathematical knowledge to accurately model the variable
 
-* Make probability into a newtype that implements Ord -- get rid of fmax, superfluous 'collect', fcmp, etc
