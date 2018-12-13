@@ -26,6 +26,7 @@ pub mod crypto {
         use dist::{Distribution,kappa};
 
         const MINIMUM_SHRED_LENGTH:usize = 7;
+        const MAXIMUM_SHRED_SAMPLE_LENGTH:usize = 50;
         const PERCENTAGE_OF_GRADUATING_KEYS:usize = 10;
 
         mod err {
@@ -64,8 +65,10 @@ pub mod crypto {
 
         pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
             let shreds = ct.iter().unzipn(n);
-            let first_shred = shreds.iter().next().unwrap();
-            kappa(first_shred)
+            let first_shred = 
+                shreds.into_iter().next().unwrap()
+                .take(MAXIMUM_SHRED_SAMPLE_LENGTH);
+            kappa(&first_shred)
         }
 
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Result<usize,err::Msg> {
