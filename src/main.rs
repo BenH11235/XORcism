@@ -133,19 +133,18 @@ pub mod crypto {
         ->          Result<Vec<T>,err::Msg>
         where T: Glyph, K: Glyph {
             let klen_guess = guess_key_length(ct)?;
-            let derived_pt =
+            let derived_shreds : Result<Vec<_>,err::Msg> = 
                 ct
                 .iter()
                 .unzipn(klen_guess)
                 .into_iter()
                 .map(|shred| {
                     let svec:Vec<T> = shred.cloned().collect();
-                    let (_, s) = simple_xor_break(&svec,ptspace,keyspace,comb).unwrap();
-                    s.into_iter()
-                }).collect::<Vec<_>>()
-                .zipn()
-                .collect();
-            Ok(derived_pt)
+                    simple_xor_break(&svec,ptspace,keyspace,comb)
+                    .map(|(_,s)| s.into_iter())
+                }).collect();
+
+            Ok(derived_shreds?.zipn().collect())
         }
 
 
