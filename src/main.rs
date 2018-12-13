@@ -39,6 +39,8 @@ pub mod crypto {
                 "Congratulations, you have broken mathematics";
             pub const INVALID_INPUT:&str = 
                 "Function input out of range.";
+            pub const KEY_SCORE_FAIL:&str = 
+                "Unexpected error when computing keylength score.";
         }
         
         pub fn transform<T:Glyph,K:Glyph>
@@ -78,26 +80,30 @@ pub mod crypto {
 
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Result<usize,err::Msg> {
             let max_checked_len = 
-                (ct.len() as f64 
-                / MINIMUM_SHRED_LENGTH as f64
-                ).floor() 
-                as usize;
-            if max_checked_len == 0 {
-                return Err(err::CIPHERTEXT_TOO_SHORT);
-            } let num_finalists = 
-                (max_checked_len as f64 
-                / PERCENTAGE_OF_GRADUATING_KEYS as f64
-                ).ceil() 
-                as usize;
-            let ksc = |l| key_len_score(&ct,l).unwrap();
-            iterate(1, |keylen| keylen+1)
-            .take_while(|&keylen| keylen < max_checked_len)
-            .sorted_by(|&l1, &l2| fcmp(ksc(l1),ksc(l2)).reverse())
+                (ct.len() as f64 / MINIMUM_SHRED_LENGTH as f64).floor() as usize;
+            
+            let num_finalists = 
+                (max_checked_len as f64 / PERCENTAGE_OF_GRADUATING_KEYS as f64)
+                .ceil() as usize;
+           
+            let lengths_and_scores: Result<Vec<(usize,f64)>,err::Msg> = 
+                iterate(1, |keylen| keylen+1)
+                .take_while(|&keylen| keylen < max_checked_len)
+                .map(|l| 
+                     key_len_score(&ct,l)
+                     .map(|s| (l,s))
+                     .map_err(|_| err::KEY_SCORE_FAIL)
+                ).collect();
+            
+            lengths_and_scores?
             .iter()
+            .sorted_by(|&(_,s1), &(_,s2)| fcmp(*s1,*s2).reverse())
+            .iter()
+            .map(|(l,_)| l)
             .take(num_finalists)
             .min()
             .cloned()
-            .ok_or(err::MATHEMATICAL_PARADOX)
+            .ok_or(err::CIPHERTEXT_TOO_SHORT)
         }
 
  
@@ -290,7 +296,7 @@ pub mod dist {
             .fold((0,0), |(s,o),(_,n)| (s+n, o+pairs(*n)));
         let opportunities:usize = pairs(samples);
         match opportunities {
-            0 => 0 as f64, //fair enough value for this edge case
+            0 => f64::from(0), //fair enough value for this edge case
             _ => coincidences as f64 / opportunities as f64
         }
     }
