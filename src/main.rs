@@ -284,7 +284,10 @@ pub mod dist {
             .iter()
             .fold((0,0), |(s,o),(_,n)| (s+n, o+pairs(*n)));
         let opportunities:usize = pairs(samples);
-        coincidences as f64 / opportunities as f64
+        match opportunities {
+            0 => 0 as f64, //fair enough value for this edge case
+            _ => coincidences as f64 / opportunities as f64
+        }
     }
 
 
