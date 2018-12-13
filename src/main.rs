@@ -37,6 +37,8 @@ pub mod crypto {
                 "Minimum ciphertext length is 20 characters.";
             pub const MATHEMATICAL_PARADOX:&str =
                 "Congratulations, you have broken mathematics";
+            pub const INVALID_INPUT:&str = 
+                "Function input out of range.";
         }
         
         pub fn transform<T:Glyph,K:Glyph>
@@ -63,12 +65,15 @@ pub mod crypto {
         }
 
 
-        pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> f64 {
-            let shreds = ct.iter().unzipn(n);
-            let first_shred = 
-                shreds.into_iter().next().unwrap()
-                .take(MAXIMUM_SHRED_SAMPLE_LENGTH);
-            kappa(&first_shred)
+        pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> Result<f64,err::Msg> {
+            if n==0 {
+                return Err(err::INVALID_INPUT);
+            } let shreds = ct.iter().unzipn(n);
+            if let Some(s) = shreds.into_iter().next() {
+                Ok(kappa(&s.take(MAXIMUM_SHRED_SAMPLE_LENGTH)))
+            } else {
+                Err(err::MATHEMATICAL_PARADOX)
+            }
         }
 
         pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Result<usize,err::Msg> {
@@ -87,7 +92,7 @@ pub mod crypto {
             let ksc = |l| key_len_score(&ct,l);
             iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
-            .sorted_by(|&l1, &l2| fcmp(ksc(l1),ksc(l2)).reverse())
+            .sorted_by(|&l1, &l2| fcmp(ksc(l1).unwrap(),ksc(l2).unwrap()).reverse())
             .iter()
             .take(num_finalists)
             .min()
