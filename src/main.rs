@@ -6,8 +6,18 @@ extern crate counter;
 
 
 pub mod crypto {
+    use dist::Distribution;
+    use utils::Glyph;
     //takes arguments by reference so 'Vigenere Compose'
     //of non-copy types can have the same prototype
+    type Maybe<T> = Result<T,err::Msg>;
+
+    mod err {
+        pub type Msg = &'static str;
+        pub const ENTROPY_CALC_ERROR:&str = 
+            "Failed to calculate entropy for a provided distribution";
+    }
+
     pub fn chrxor(c1:&char, c2:&char) -> char {
         ((*c1 as u8) ^ (*c2 as u8)) as char
     }
@@ -16,6 +26,14 @@ pub mod crypto {
         s1.chars().zip(s2.chars())
         .map(|(c1,c2)| chrxor(&c1,&c2))
         .collect()
+    }
+
+    pub fn unicity_coefficient<T:Glyph> 
+    (keyspace:&Distribution<T>,ptspace:&Distribution<T>) -> Maybe<f64> {
+        match (keyspace.entropy(),ptspace.redundancy()) {
+            (Ok(ke),Ok(pe)) => Ok(ke / pe),
+            _ => Err(err::ENTROPY_CALC_ERROR)
+        }
     }
        
     pub mod vigenere {
@@ -249,6 +267,10 @@ pub mod dist {
 
     pub trait Distribution<T:Glyph> {
         fn probabilities(&self) -> &HashMap<T,Prob>;
+
+        fn space_size(&self) -> usize {
+            self.probabilities().len()
+        }
     
         fn get(&self, key:&T) -> Prob {
             *self.probabilities()
@@ -268,6 +290,17 @@ pub mod dist {
             .iter()
             .map(|e| self.get(e).surprise())
             .fold_results(0.0, |s1,s2| s1+s2)
+        }
+
+        fn entropy(&self) -> Maybe<f64> {
+            self.probabilities()
+            .iter()
+            .map(|(_,&p)| p.surprise().map(|s| p.val()*s))
+            .fold_results(0.0, |s1,s2| s1+s2)
+        }
+
+        fn redundancy(&self) -> Maybe<f64> {
+            self.entropy().map(|e| (self.space_size() as f64).log(2.0) - e)
         }
 
         fn display(&self) -> String {
