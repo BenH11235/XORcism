@@ -12,7 +12,6 @@ Must-have before shipping
 
 Nice to have later
 
-* Change arbitrary limits on minimum and maximum shred lengths into ones based on the unicity distance
 
 * Provide sequence of possible solutions instead of single solution
 
