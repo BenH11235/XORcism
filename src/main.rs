@@ -199,7 +199,7 @@ pub mod dist {
     use std::collections::*;
     use std::iter::*;
     use itertools::Itertools;
-    use utils::{fcmp,Glyph,Iter};
+    use utils::{fcmp,Glyph,Iter,approx_equal};
     use counter::Counter;
 
     type Maybe<T> = Result<T,err::Msg>;
@@ -313,8 +313,13 @@ pub mod dist {
         fn entropy(&self) -> Maybe<f64> {
             self.probabilities()
             .iter()
-            .map(|(_,&p)| p.surprise().map(|s| p.val()*s))
-            .fold_results(0.0, |s1,s2| s1+s2)
+            .map(|(_,&p)| 
+                if approx_equal(p,Prob(0.0)) {
+                    Ok(0.0)
+                } else {
+                    p.surprise().map(|s| p.val()*s)
+                }
+            ).fold_results(0.0, |s1,s2| s1+s2)
         }
 
         fn redundancy(&self) -> Maybe<f64> {
