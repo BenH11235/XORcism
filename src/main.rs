@@ -28,22 +28,23 @@ pub mod crypto {
         .collect()
     }
 
-    pub fn unicity_coefficient<T:Glyph> 
-    (keyspace:&Distribution<T>,ptspace:&Distribution<T>) -> Maybe<f64> {
+    pub fn unicity_coefficient<T:Glyph,K:Glyph> 
+    (keyspace:&Distribution<K>,ptspace:&Distribution<T>) -> Maybe<f64> {
         match (keyspace.entropy(),ptspace.redundancy()) {
             (Ok(ke),Ok(pe)) => Ok(ke / pe),
             _ => Err(err::ENTROPY_CALC_ERROR)
         }
     }
+
        
     pub mod vigenere {
         use std::iter::once;
         use itertools::{iterate,Itertools};
         use utils::{Glyph,ZipN,UnzipN,fcmp};
+        use crypto::unicity_coefficient;
         use dist;
         use dist::{Distribution,kappa};
 
-        const MINIMUM_SHRED_LENGTH:usize = 7;
         const MAXIMUM_SHRED_SAMPLE_LENGTH:usize = 50;
         const PERCENTAGE_OF_GRADUATING_KEYS:usize = 10;
 
@@ -61,6 +62,8 @@ pub mod crypto {
                 "Function input out of range.";
             pub const KEY_SCORE_FAIL:&str = 
                 "Unexpected error when computing keylength score.";
+            pub const IMPOSSIBLE_PARAMETERS:&str = 
+                "This ciphertext is theoretically impossible to break.";
         }
         
         pub fn transform<T:Glyph,K:Glyph>
@@ -98,10 +101,7 @@ pub mod crypto {
             }
         }
 
-        pub fn guess_key_length<T:Glyph>(ct:&[T]) -> Maybe<usize> {
-            let max_checked_len = 
-                (ct.len() as f64 / MINIMUM_SHRED_LENGTH as f64).floor() as usize;
-            
+        pub fn guess_key_length<T:Glyph>(ct:&[T], max_checked_len:usize) -> Maybe<usize> {
             let num_finalists = 
                 (max_checked_len as f64 / PERCENTAGE_OF_GRADUATING_KEYS as f64)
                 .ceil() as usize;
@@ -144,15 +144,37 @@ pub mod crypto {
                 dist::surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
             ).ok_or(err::EMPTY_KEYSPACE)
         }
+       
+
+        //formula derived by requiring unicity distance per shred
+        pub fn max_feasible_keylen<'a,T,K> (   
+        ct:         &       [T],
+        ptspace:    &       Distribution<T>,
+        keyspace:   &'a     Distribution<K>
+        ) ->        Maybe<usize>
+        where T: Glyph, K: Glyph {
+            let uc = unicity_coefficient(keyspace,ptspace)?;
+            let res = 
+                (
+                    ct.len() as f64
+                    / uc
+                ).sqrt().floor();
+            Ok(res as usize)
+        }
 
         pub fn full_break<'a,T,K> (   
         ct:         &       [T],
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
-        comb:       &       impl Fn(&T,&K) -> T)   
-        ->          Maybe<Vec<T>>
+        comb:       &       impl Fn(&T,&K) -> T   
+        ) ->        Maybe<(Vec<T>,usize)>
         where T: Glyph, K: Glyph {
-            let klen_guess = guess_key_length(ct)?;
+            let max_checked_keylen = max_feasible_keylen(ct,ptspace,keyspace)?;
+            if max_checked_keylen == 0 {
+                return Err(err::IMPOSSIBLE_PARAMETERS)
+            };
+
+            let klen_guess = guess_key_length(ct,max_checked_keylen)?;
             let derived_shreds : Maybe<Vec<_>> = 
                 ct
                 .iter()
@@ -164,12 +186,8 @@ pub mod crypto {
                     .map(|(_,s)| s.into_iter())
                 }).collect();
 
-            Ok(derived_shreds?.zipn().collect())
+            Ok((derived_shreds?.zipn().collect(), max_checked_keylen))
         }
-
-
-
-
     }
 }
 
@@ -749,7 +767,7 @@ mod tests {
         let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
         let key:Vec<char> = "longerkey".chars().collect();
         let ct = vigenere::encrypt(&pt,&key,&chrxor);
-        let g_klen = vigenere::guess_key_length(&ct);
+        let g_klen = vigenere::guess_key_length(&ct,20);
         assert_eq!(g_klen, Ok(key.len()));
     }
 
@@ -798,7 +816,7 @@ mod tests {
             .map(|x| char::from(x))
             .collect::<Vec<char>>()
         );
-        let pt2 = vigenere::full_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
+        let (pt2, _) = vigenere::full_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
         assert_eq!(pt,pt2);
     }
 
