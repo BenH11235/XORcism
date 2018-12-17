@@ -163,7 +163,6 @@ pub mod crypto {
             if max_checked_keylen == 0 {
                 return Err(err::IMPOSSIBLE_PARAMETERS)
             };
-
             let klen_guess = guess_key_length(ct,max_checked_keylen)?;
             let derived_shreds : Maybe<Vec<_>> = 
                 ct
@@ -1496,6 +1495,7 @@ mod tests {
     }
     
     #[test]
+    #[cfg(ignore)]
     fn full_break_base64_test() {
         let pt = SAMPLE_TEXT_BASE64;
         let key = b"key";
