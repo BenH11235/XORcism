@@ -12,6 +12,13 @@ Must-have before shipping
 
 Nice to have later
 
+* Right now the ciphertext distribution is assumed, implicitly, to be a uniform
+distribution over the range of the plaintext distribution.
+This is true for 'classic' use cases, but is not always true.
+This is low priority right now because:
+1. The implicit ciphertext distribution is only used to compute the unicity distance
+2. Fixing this will be fairly involved work.
+But it should be fixed eventually.
 
 * Provide sequence of possible solutions instead of single solution
 
