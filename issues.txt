@@ -2,7 +2,7 @@ Must-have before shipping
 
 * Documentation
 
-* Add support to base64, hexadecimal
+* Add support to base64, hexadecimal, binary data [try to use prevalence of nulls]
 
 * Add command line capacity
 

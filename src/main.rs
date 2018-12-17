@@ -17,17 +17,7 @@ pub mod crypto {
         pub const ENTROPY_CALC_ERROR:&str = 
             "Failed to calculate entropy for a provided distribution";
     }
-
-    pub fn chrxor(c1:&char, c2:&char) -> char {
-        ((*c1 as u8) ^ (*c2 as u8)) as char
-    }
     
-    pub fn strxor(s1:&str,s2:&str) -> String {
-        s1.chars().zip(s2.chars())
-        .map(|(c1,c2)| chrxor(&c1,&c2))
-        .collect()
-    }
-
     pub fn unicity_coefficient<T:Glyph,K:Glyph> 
     (keyspace:&Distribution<K>,ptspace:&Distribution<T>) -> Maybe<f64> {
         match (keyspace.entropy(),ptspace.redundancy()) {
@@ -416,184 +406,184 @@ pub mod dist {
     pub mod known {
         use dist::Prob;
 
-        pub const HEX:[(char,Prob);16] = [
-            ('0', Prob(0.0625)),
-            ('1', Prob(0.0625)),
-            ('2', Prob(0.0625)),
-            ('3', Prob(0.0625)),
-            ('4', Prob(0.0625)),
-            ('5', Prob(0.0625)),
-            ('6', Prob(0.0625)),
-            ('7', Prob(0.0625)),
-            ('8', Prob(0.0625)),
-            ('9', Prob(0.0625)),
-            ('A', Prob(0.0625)),
-            ('B', Prob(0.0625)),
-            ('C', Prob(0.0625)),
-            ('D', Prob(0.0625)),
-            ('E', Prob(0.0625)),
-            ('F', Prob(0.0625))
+        pub const HEX:[(u8,Prob);16] = [
+            (b'0', Prob(0.0625)),
+            (b'1', Prob(0.0625)),
+            (b'2', Prob(0.0625)),
+            (b'3', Prob(0.0625)),
+            (b'4', Prob(0.0625)),
+            (b'5', Prob(0.0625)),
+            (b'6', Prob(0.0625)),
+            (b'7', Prob(0.0625)),
+            (b'8', Prob(0.0625)),
+            (b'9', Prob(0.0625)),
+            (b'A', Prob(0.0625)),
+            (b'B', Prob(0.0625)),
+            (b'C', Prob(0.0625)),
+            (b'D', Prob(0.0625)),
+            (b'E', Prob(0.0625)),
+            (b'F', Prob(0.0625))
         ];
 
-        pub const BASE64:[(char,Prob);64] = [
-            ('A', Prob(0.015625)),
-            ('B', Prob(0.015625)),
-            ('C', Prob(0.015625)),
-            ('D', Prob(0.015625)),
-            ('E', Prob(0.015625)),
-            ('F', Prob(0.015625)),
-            ('G', Prob(0.015625)),
-            ('H', Prob(0.015625)),
-            ('I', Prob(0.015625)),
-            ('J', Prob(0.015625)),
-            ('K', Prob(0.015625)),
-            ('L', Prob(0.015625)),
-            ('M', Prob(0.015625)),
-            ('N', Prob(0.015625)),
-            ('O', Prob(0.015625)),
-            ('P', Prob(0.015625)),
-            ('Q', Prob(0.015625)),
-            ('R', Prob(0.015625)),
-            ('S', Prob(0.015625)),
-            ('T', Prob(0.015625)),
-            ('U', Prob(0.015625)),
-            ('V', Prob(0.015625)),
-            ('W', Prob(0.015625)),
-            ('X', Prob(0.015625)),
-            ('Y', Prob(0.015625)),
-            ('Z', Prob(0.015625)),
-            ('a', Prob(0.015625)),
-            ('b', Prob(0.015625)),
-            ('c', Prob(0.015625)),
-            ('d', Prob(0.015625)),
-            ('e', Prob(0.015625)),
-            ('f', Prob(0.015625)),
-            ('g', Prob(0.015625)),
-            ('h', Prob(0.015625)),
-            ('i', Prob(0.015625)),
-            ('j', Prob(0.015625)),
-            ('k', Prob(0.015625)),
-            ('l', Prob(0.015625)),
-            ('m', Prob(0.015625)),
-            ('n', Prob(0.015625)),
-            ('o', Prob(0.015625)),
-            ('p', Prob(0.015625)),
-            ('q', Prob(0.015625)),
-            ('r', Prob(0.015625)),
-            ('s', Prob(0.015625)),
-            ('t', Prob(0.015625)),
-            ('u', Prob(0.015625)),
-            ('v', Prob(0.015625)),
-            ('w', Prob(0.015625)),
-            ('x', Prob(0.015625)),
-            ('y', Prob(0.015625)),
-            ('z', Prob(0.015625)),
-            ('0', Prob(0.015625)),
-            ('1', Prob(0.015625)),
-            ('2', Prob(0.015625)),
-            ('3', Prob(0.015625)),
-            ('4', Prob(0.015625)),
-            ('5', Prob(0.015625)),
-            ('6', Prob(0.015625)),
-            ('7', Prob(0.015625)),
-            ('8', Prob(0.015625)),
-            ('9', Prob(0.015625)),
-            ('+', Prob(0.015625)),
-            ('/', Prob(0.015625))
+        pub const BASE64:[(u8,Prob);64] = [
+            (b'A', Prob(0.015625)),
+            (b'B', Prob(0.015625)),
+            (b'C', Prob(0.015625)),
+            (b'D', Prob(0.015625)),
+            (b'E', Prob(0.015625)),
+            (b'F', Prob(0.015625)),
+            (b'G', Prob(0.015625)),
+            (b'H', Prob(0.015625)),
+            (b'I', Prob(0.015625)),
+            (b'J', Prob(0.015625)),
+            (b'K', Prob(0.015625)),
+            (b'L', Prob(0.015625)),
+            (b'M', Prob(0.015625)),
+            (b'N', Prob(0.015625)),
+            (b'O', Prob(0.015625)),
+            (b'P', Prob(0.015625)),
+            (b'Q', Prob(0.015625)),
+            (b'R', Prob(0.015625)),
+            (b'S', Prob(0.015625)),
+            (b'T', Prob(0.015625)),
+            (b'U', Prob(0.015625)),
+            (b'V', Prob(0.015625)),
+            (b'W', Prob(0.015625)),
+            (b'X', Prob(0.015625)),
+            (b'Y', Prob(0.015625)),
+            (b'Z', Prob(0.015625)),
+            (b'a', Prob(0.015625)),
+            (b'b', Prob(0.015625)),
+            (b'c', Prob(0.015625)),
+            (b'd', Prob(0.015625)),
+            (b'e', Prob(0.015625)),
+            (b'f', Prob(0.015625)),
+            (b'g', Prob(0.015625)),
+            (b'h', Prob(0.015625)),
+            (b'i', Prob(0.015625)),
+            (b'j', Prob(0.015625)),
+            (b'k', Prob(0.015625)),
+            (b'l', Prob(0.015625)),
+            (b'm', Prob(0.015625)),
+            (b'n', Prob(0.015625)),
+            (b'o', Prob(0.015625)),
+            (b'p', Prob(0.015625)),
+            (b'q', Prob(0.015625)),
+            (b'r', Prob(0.015625)),
+            (b's', Prob(0.015625)),
+            (b't', Prob(0.015625)),
+            (b'u', Prob(0.015625)),
+            (b'v', Prob(0.015625)),
+            (b'w', Prob(0.015625)),
+            (b'x', Prob(0.015625)),
+            (b'y', Prob(0.015625)),
+            (b'z', Prob(0.015625)),
+            (b'0', Prob(0.015625)),
+            (b'1', Prob(0.015625)),
+            (b'2', Prob(0.015625)),
+            (b'3', Prob(0.015625)),
+            (b'4', Prob(0.015625)),
+            (b'5', Prob(0.015625)),
+            (b'6', Prob(0.015625)),
+            (b'7', Prob(0.015625)),
+            (b'8', Prob(0.015625)),
+            (b'9', Prob(0.015625)),
+            (b'+', Prob(0.015625)),
+            (b'/', Prob(0.015625))
         ];
 
-        pub const SHAKESPEARE:[(char,Prob);91] = [
-            (' ', Prob(0.237_062_444_956_660_62)),
-            ('e', Prob(0.074_130_862_579_396_6)),
-            ('t', Prob(0.053_126_498_319_317_414)),
-            ('o', Prob(0.051_553_818_393_209_924)),
-            ('a', Prob(0.044_825_042_106_379_775)),
-            ('h', Prob(0.040_014_297_756_457_76)),
-            ('n', Prob(0.039_559_569_008_018_94)),
-            ('s', Prob(0.039_386_251_765_463_294)),
-            ('r', Prob(0.038_271_598_378_879_19)),
-            ('i', Prob(0.036_309_412_683_561_006)),
-            ('l', Prob(0.026_778_246_817_310_985)),
-            ('d', Prob(0.024_509_732_972_359_564)),
-            ('\n', Prob(0.022_801_660_401_168_957)),
-            ('u', Prob(0.021_035_876_485_998_403)),
-            ('m', Prob(0.017_511_270_659_058_054)),
-            ('y', Prob(0.015_622_552_420_679_421)),
-            (',', Prob(0.015_238_359_759_327_207)),
-            ('.', Prob(0.014_295_008_298_524_843)),
-            ('w', Prob(0.013_354_954_628_807_049)),
-            ('f', Prob(0.012_605_439_999_530_98)),
-            ('c', Prob(0.012_217_949_547_094_197)),
-            ('g', Prob(0.010_449_417_472_686_504)),
-            ('I', Prob(0.010_224_251_625_856_808)),
-            ('b', Prob(0.008_527_171_691_614_762)),
-            ('p', Prob(0.008_523_873_900_530_193)),
-            ('A', Prob(0.008_150_307_454_894_921)),
-            ('E', Prob(0.007_801_657_653_009_72)),
-            ('T', Prob(0.007_291_782_509_212_288)),
-            ('S', Prob(0.006_231_176_254_291_938)),
-            ('v', Prob(0.006_227_145_620_744_132)),
-            ('O', Prob(0.006_084_241_340_412_836)),
-            ('\'', Prob(0.005_692_170_622_580_818)),
-            ('k', Prob(0.005_351_948_509_022_848)),
-            ('R', Prob(0.005_307_611_539_996_984)),
-            ('N', Prob(0.005_008_611_814_996_119)),
-            ('L', Prob(0.004_371_038_871_979_566_5)),
-            ('C', Prob(0.003_938_478_608_053_682_5)),
-            ('H', Prob(0.003_382_434_389_072_292_7)),
-            (';', Prob(0.003_151_039_381_305_078_7)),
-            ('W', Prob(0.003_022_242_318_391_103)),
-            ('M', Prob(0.002_907_918_894_126_066)),
-            ('D', Prob(0.002_873_292_087_738_098_4)),
-            ('B', Prob(0.002_823_825_221_469_572_6)),
-            ('U', Prob(0.002_588_582_790_770_362_2)),
-            ('P', Prob(0.002_187_351_542_147_877)),
-            ('F', Prob(0.002_145_945_942_974_963)),
-            ('G', Prob(0.002_045_363_314_895_627_5)),
-            ('?', Prob(0.001_919_314_411_218_792_2)),
-            ('Y', Prob(0.001_667_033_393_249_311_6)),
-            ('!', Prob(0.001_620_314_686_217_926_5)),
-            ('-', Prob(0.001_479_242_512_044_723_9)),
-            ('K', Prob(0.001_135_172_975_554_757_2)),
-            ('x', Prob(0.000_858_891_366_914_251_3)),
-            ('V', Prob(0.000_655_894_004_597_487_2)),
-            ('j', Prob(0.000_496_867_190_074_967_9)),
-            ('q', Prob(0.000_440_438_320_405_686_9)),
-            ('[', Prob(0.000_381_994_133_962_503)),
-            (']', Prob(0.000_380_528_449_036_028_2)),
-            ('J', Prob(0.000_378_696_342_877_934_63)),
-            (':', Prob(0.000_334_725_795_083_689_7)),
-            ('Q', Prob(0.000_215_822_105_423_418_97)),
-            ('z', Prob(0.000_201_348_466_774_48)),
-            ('9', Prob(0.000_173_683_663_787_267_55)),
-            ('1', Prob(0.000_170_019_451_471_080_48)),
-            (')', Prob(0.000_115_239_477_344_083_64)),
-            ('(', Prob(0.000_115_056_266_728_274_29)),
-            ('X', Prob(0.000_111_025_633_180_468_51)),
-            ('Z', Prob(0.000_097_468_047_610_576_31)),
-            ('"', Prob(0.000_086_108_989_430_396_36)),
-            ('<', Prob(0.000_085_742_568_198_777_65)),
-            ('>', Prob(0.000_080_795_881_571_925_1)),
-            ('2', Prob(0.000_067_055_085_386_223_55)),
-            ('3', Prob(0.000_060_459_503_217_086_81)),
-            ('0', Prob(0.000_054_779_974_126_996_84)),
-            ('4', Prob(0.000_017_038_587_270_269_92)),
-            ('5', Prob(0.000_015_023_270_496_367_025)),
-            ('_', Prob(0.000_013_007_953_722_464_131)),
-            ('*', Prob(0.000_011_542_268_795_989_3)),
-            ('6', Prob(0.000_011_542_268_795_989_3)),
-            ('7', Prob(0.000_007_511_635_248_183_512)),
-            ('8', Prob(0.000_007_328_424_632_374_159)),
-            ('|', Prob(0.000_006_045_950_321_708_681)),
-            ('&', Prob(0.000_003_847_422_931_996_433_5)),
-            ('@', Prob(0.000_001_465_684_926_474_831_8)),
-            ('/', Prob(0.000_000_916_053_079_046_769_8)),
-            ('}', Prob(0.000_000_366_421_231_618_707_95)),
-            ('`', Prob(0.000_000_183_210_615_809_353_98)),
-            ('#', Prob(0.000_000_183_210_615_809_353_98)),
-            ('~', Prob(0.000_000_183_210_615_809_353_98)),
-            ('%', Prob(0.000_000_183_210_615_809_353_98)),
-            ('=', Prob(0.000_000_183_210_615_809_353_98))
+        pub const SHAKESPEARE:[(u8,Prob);91] = [
+            (b' ', Prob(0.237_062_444_956_660_62)),
+            (b'e', Prob(0.074_130_862_579_396_6)),
+            (b't', Prob(0.053_126_498_319_317_414)),
+            (b'o', Prob(0.051_553_818_393_209_924)),
+            (b'a', Prob(0.044_825_042_106_379_775)),
+            (b'h', Prob(0.040_014_297_756_457_76)),
+            (b'n', Prob(0.039_559_569_008_018_94)),
+            (b's', Prob(0.039_386_251_765_463_294)),
+            (b'r', Prob(0.038_271_598_378_879_19)),
+            (b'i', Prob(0.036_309_412_683_561_006)),
+            (b'l', Prob(0.026_778_246_817_310_985)),
+            (b'd', Prob(0.024_509_732_972_359_564)),
+            (b'\n', Prob(0.022_801_660_401_168_957)),
+            (b'u', Prob(0.021_035_876_485_998_403)),
+            (b'm', Prob(0.017_511_270_659_058_054)),
+            (b'y', Prob(0.015_622_552_420_679_421)),
+            (b',', Prob(0.015_238_359_759_327_207)),
+            (b'.', Prob(0.014_295_008_298_524_843)),
+            (b'w', Prob(0.013_354_954_628_807_049)),
+            (b'f', Prob(0.012_605_439_999_530_98)),
+            (b'c', Prob(0.012_217_949_547_094_197)),
+            (b'g', Prob(0.010_449_417_472_686_504)),
+            (b'I', Prob(0.010_224_251_625_856_808)),
+            (b'b', Prob(0.008_527_171_691_614_762)),
+            (b'p', Prob(0.008_523_873_900_530_193)),
+            (b'A', Prob(0.008_150_307_454_894_921)),
+            (b'E', Prob(0.007_801_657_653_009_72)),
+            (b'T', Prob(0.007_291_782_509_212_288)),
+            (b'S', Prob(0.006_231_176_254_291_938)),
+            (b'v', Prob(0.006_227_145_620_744_132)),
+            (b'O', Prob(0.006_084_241_340_412_836)),
+            (b'\'', Prob(0.005_692_170_622_580_818)),
+            (b'k', Prob(0.005_351_948_509_022_848)),
+            (b'R', Prob(0.005_307_611_539_996_984)),
+            (b'N', Prob(0.005_008_611_814_996_119)),
+            (b'L', Prob(0.004_371_038_871_979_566_5)),
+            (b'C', Prob(0.003_938_478_608_053_682_5)),
+            (b'H', Prob(0.003_382_434_389_072_292_7)),
+            (b';', Prob(0.003_151_039_381_305_078_7)),
+            (b'W', Prob(0.003_022_242_318_391_103)),
+            (b'M', Prob(0.002_907_918_894_126_066)),
+            (b'D', Prob(0.002_873_292_087_738_098_4)),
+            (b'B', Prob(0.002_823_825_221_469_572_6)),
+            (b'U', Prob(0.002_588_582_790_770_362_2)),
+            (b'P', Prob(0.002_187_351_542_147_877)),
+            (b'F', Prob(0.002_145_945_942_974_963)),
+            (b'G', Prob(0.002_045_363_314_895_627_5)),
+            (b'?', Prob(0.001_919_314_411_218_792_2)),
+            (b'Y', Prob(0.001_667_033_393_249_311_6)),
+            (b'!', Prob(0.001_620_314_686_217_926_5)),
+            (b'-', Prob(0.001_479_242_512_044_723_9)),
+            (b'K', Prob(0.001_135_172_975_554_757_2)),
+            (b'x', Prob(0.000_858_891_366_914_251_3)),
+            (b'V', Prob(0.000_655_894_004_597_487_2)),
+            (b'j', Prob(0.000_496_867_190_074_967_9)),
+            (b'q', Prob(0.000_440_438_320_405_686_9)),
+            (b'[', Prob(0.000_381_994_133_962_503)),
+            (b']', Prob(0.000_380_528_449_036_028_2)),
+            (b'J', Prob(0.000_378_696_342_877_934_63)),
+            (b':', Prob(0.000_334_725_795_083_689_7)),
+            (b'Q', Prob(0.000_215_822_105_423_418_97)),
+            (b'z', Prob(0.000_201_348_466_774_48)),
+            (b'9', Prob(0.000_173_683_663_787_267_55)),
+            (b'1', Prob(0.000_170_019_451_471_080_48)),
+            (b')', Prob(0.000_115_239_477_344_083_64)),
+            (b'(', Prob(0.000_115_056_266_728_274_29)),
+            (b'X', Prob(0.000_111_025_633_180_468_51)),
+            (b'Z', Prob(0.000_097_468_047_610_576_31)),
+            (b'"', Prob(0.000_086_108_989_430_396_36)),
+            (b'<', Prob(0.000_085_742_568_198_777_65)),
+            (b'>', Prob(0.000_080_795_881_571_925_1)),
+            (b'2', Prob(0.000_067_055_085_386_223_55)),
+            (b'3', Prob(0.000_060_459_503_217_086_81)),
+            (b'0', Prob(0.000_054_779_974_126_996_84)),
+            (b'4', Prob(0.000_017_038_587_270_269_92)),
+            (b'5', Prob(0.000_015_023_270_496_367_025)),
+            (b'_', Prob(0.000_013_007_953_722_464_131)),
+            (b'*', Prob(0.000_011_542_268_795_989_3)),
+            (b'6', Prob(0.000_011_542_268_795_989_3)),
+            (b'7', Prob(0.000_007_511_635_248_183_512)),
+            (b'8', Prob(0.000_007_328_424_632_374_159)),
+            (b'|', Prob(0.000_006_045_950_321_708_681)),
+            (b'&', Prob(0.000_003_847_422_931_996_433_5)),
+            (b'@', Prob(0.000_001_465_684_926_474_831_8)),
+            (b'/', Prob(0.000_000_916_053_079_046_769_8)),
+            (b'}', Prob(0.000_000_366_421_231_618_707_95)),
+            (b'`', Prob(0.000_000_183_210_615_809_353_98)),
+            (b'#', Prob(0.000_000_183_210_615_809_353_98)),
+            (b'~', Prob(0.000_000_183_210_615_809_353_98)),
+            (b'%', Prob(0.000_000_183_210_615_809_353_98)),
+            (b'=', Prob(0.000_000_183_210_615_809_353_98))
             ];
     }
 }
@@ -746,10 +736,10 @@ mod tests {
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
     use dist::{Prob,Distribution,binomial_p_estimate,kappa};
-    use crypto::{vigenere,chrxor};
+    use crypto::{vigenere};
     use itertools::{iterate,assert_equal};
    
-    pub const SAMPLE_TEXT:&str = "Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
+    pub const SAMPLE_TEXT:&[u8] = b"Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
   
     #[test]
     fn zipn_test() {
@@ -846,18 +836,18 @@ mod tests {
 
     #[test]
     fn encrypt_decrypt_test() {
-        let pt_initial:Vec<char> = "helloworld".chars().collect();
-        let key:Vec<char> = "key".chars().collect();
-        let ct = vigenere::encrypt(&pt_initial,&key,&chrxor);
-        let pt_final = vigenere::decrypt(&ct,&key,&chrxor);
-        assert_eq!(pt_initial, pt_final);
+        let pt_initial = b"helloworld";
+        let key = b"key";
+        let ct = vigenere::encrypt(pt_initial,key,&|x,y| x^y);
+        let pt_final = vigenere::decrypt(&ct,key,&|x,y| x^y);
+        assert_eq!(pt_initial.to_vec(), pt_final);
     }
 
     #[test]
     fn guess_keylen_test() {
-        let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
-        let key:Vec<char> = "longerkey".chars().collect();
-        let ct = vigenere::encrypt(&pt,&key,&chrxor);
+        let key = b"longerkey";
+        let pt = SAMPLE_TEXT;
+        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
         let g_klen = vigenere::guess_key_length(&ct,20);
         assert_eq!(g_klen, Ok(key.len()));
     }
@@ -867,7 +857,7 @@ mod tests {
     fn compile_distribution_test() {
         let d = dist::from(&SHAKESPEARE);
         utils::approx_equal(
-            d.get(&'a'), 
+            d.get(&b'a'), 
             Prob(0.044825042106379775)
         );
     }
@@ -881,34 +871,29 @@ mod tests {
 
     #[test]
     fn simple_xor_break_test() {
-        let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
-        let key:Vec<char> = "k".chars().collect();
-        let ct = vigenere::encrypt(&pt,&key,&chrxor);
+        let pt = SAMPLE_TEXT;
+        let key =  b"k";
+        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
         let ptspace = dist::from(&SHAKESPEARE);
-        let keyspace = dist::uniform(
-            &(0..=255)
-            .map(|x| char::from(x))
-            .collect::<Vec<char>>()
-        );
+        let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
         let (key2, pt2) = 
-            vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
+            vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&|x,y| x^y)
+            .unwrap();
         assert_eq!(key[0],*key2);
-        assert_eq!(pt,pt2);
+        assert_eq!(pt.to_vec(), pt2);
     }
 
     #[test]
     fn full_break_test() {
-        let pt:Vec<char> = SAMPLE_TEXT.chars().collect();
-        let key:Vec<char> = "key".chars().collect();
-        let ct = vigenere::encrypt(&pt,&key,&chrxor);
+        let pt = SAMPLE_TEXT;
+        let key = b"key";
+        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
         let ptspace = dist::from(&SHAKESPEARE);
-        let keyspace = dist::uniform(
-            &(0..=255)
-            .map(|x| char::from(x))
-            .collect::<Vec<char>>()
-        );
-        let (pt2, _) = vigenere::full_break(&ct,&ptspace,&keyspace,&chrxor).unwrap();
-        assert_eq!(pt,pt2);
+        let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
+        let (pt2, _) = 
+            vigenere::full_break(&ct, &ptspace, &keyspace, &|x,y| x^y)
+            .unwrap();
+        assert_eq!(pt.to_vec(), pt2);
     }
 
     #[test]
