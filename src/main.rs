@@ -1333,10 +1333,13 @@ mod tests {
     use utils::{Average,FMax,ZipN,UnzipN};
     use dist;
     use dist::{Prob,Distribution,binomial_p_estimate,kappa};
+    use dist::known::{SHAKESPEARE,HEX,BASE64};
     use crypto::{vigenere};
     use itertools::{iterate,assert_equal};
    
     pub const SAMPLE_TEXT:&[u8] = b"Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
+
+    pub const SAMPLE_TEXT_BASE64:&[u8] = b"TW9sb2NoIGlzIGludHJvZHVjZWQgYXMgdGhlIGFuc3dlciB0byBhIHF1ZXN0aW9uIC0tIEMuIFMuIExld2lzJyBxdWVzdGlvbiBpbiBIaWVyYXJjaHkgb2YgUGhpbG9zb3BoZXJzIC0tIHdoYXQgZG9lcyBpdD8gRWFydGggY291bGQgYmUgZmFpciwgYW5kIGFsbCBtZW4gZ2xhZCBhbmQgd2lzZS4gSW5zdGVhZCB3ZSBoYXZlIHByaXNvbnMsIHNtb2tlc3RhY2tzLCBhc3lsdW1zLiBXaGF0IHNwaGlueCBvZiBjZW1lbnQgYW5kIGFsdW1pbnVtIGJyZWFrcyBvcGVuIHRoZWlyIHNrdWxscyBhbmQgZWF0cyB1cCB0aGVpciBpbWFnaW5hdGlvbj8KCkFuZCBHaW5zYmVyZyBhbnN3ZXJzOiBNb2xvY2ggZG9lcyBpdC4KClRoZXJlJ3MgYSBwYXNzYWdlIGluIHRoZSBQaW5jaXBpYSBEaXNjb3JkaWEgd2hlcmUgTWFsYWNseXBzZSBjb21wbGFpbnMgdG8gdGhlIEdvZGRlc3MgYWJvdXQgdGhlIGV2aWxzIG9mIGh1bWFuIHNvY2lldHkuICJFdmVyeW9uZSBpcyBodXJ0aW5nIGVhY2ggb3RoZXIsIHRoZSBwbGFuZXQgaXMgcmFtcGFudCB3aXRoIGluanVzdGljZXMsIHdob2xlIHNvY2lldGllcyBwbHVuZGVyIGdyb3VwcyBvZiB0aGVpciBvd24gcGVvcGxlLCBtb3RoZXJzIGltcHJpc29uIHNvbnMsIGNoaWxkcmVuIHBlcmlzaCB3aGlsZSBicm90aGVycyB3YXIuIgoKVGhlIEdvZGRlc3MgYW5zd2VyczogIldoYXQgaXMgdGhlIG1hdHRlciB3aXRoIHRoYXQsIGlmIGl0J3Mgd2hhdCB5b3Ugd2FudCB0byBkbz8iCgpNYWxhY2x5cHNlOiAiQnV0IG5vYm9keSB3YW50cyBpdCEgRXZlcnlib2R5IGhhdGVzIGl0ISIKCkdvZGRlc3M6ICJPaC4gV2VsbCwgdGhlbiBzdG9wLiI=";
   
     #[test]
     fn zipn_test() {
@@ -1449,7 +1452,6 @@ mod tests {
         assert_eq!(g_klen, Ok(key.len()));
     }
 
-    use dist::known::SHAKESPEARE;
     #[test]
     fn compile_distribution_test() {
         let d = dist::from(&SHAKESPEARE);
@@ -1492,6 +1494,20 @@ mod tests {
             .unwrap();
         assert_eq!(pt.to_vec(), pt2);
     }
+    
+    #[test]
+    fn full_break_base64_test() {
+        let pt = SAMPLE_TEXT_BASE64;
+        let key = b"key";
+        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
+        let ptspace = dist::from(&BASE64);
+        let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
+        let (pt2, _) = 
+            vigenere::full_break(&ct, &ptspace, &keyspace, &|x,y| x^y)
+            .unwrap();
+        assert_eq!(pt.to_vec(), pt2);
+    }
+
 
     #[test]
     fn binomial_p_estimate_test() {
