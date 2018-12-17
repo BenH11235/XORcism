@@ -2,7 +2,9 @@ Must-have before shipping
 
 * Documentation
 
-* Add support to base64, hexadecimal, binary data [try to use prevalence of nulls]
+* Provide sequence of possible solutions instead of single solution
+
+* Explain the issue with base64, hexadecimal
 
 * Add command line capacity
 
@@ -11,6 +13,7 @@ Must-have before shipping
 
 
 Nice to have later
+* Add support to binary data [try to use prevalence of nulls for this last one]
 
 * Right now the ciphertext distribution is assumed, implicitly, to be a uniform
 distribution over the range of the plaintext distribution.
@@ -20,7 +23,6 @@ This is low priority right now because:
 2. Fixing this will be fairly involved work.
 But it should be fixed eventually.
 
-* Provide sequence of possible solutions instead of single solution
 
 * Make key choice take into account the issue of divisibility. E.g. sort by increasing score; create cutoff where largest disparity takes place; all keys above the cutoff graduate; start iterating on 'trees' of key lengths 
 
