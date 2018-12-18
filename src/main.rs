@@ -152,7 +152,7 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T   
-        ) ->        Maybe<Vec<T>>
+        ) ->        Maybe<impl Iter<Vec<T>>>
         where T: Glyph, K: Glyph {
             let max_checked_keylen = max_feasible_keylen(ct,ptspace,keyspace)?;
             if max_checked_keylen == 0 {
@@ -170,7 +170,7 @@ pub mod crypto {
                     .map(|(_,s)| s.into_iter())
                 }).collect();
 
-            Ok(derived_shreds?.zipn().collect())
+            Ok(once(derived_shreds?.zipn().collect()))
         }
     }
 }
@@ -1485,7 +1485,7 @@ mod tests {
         let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
         let pt2 = 
             vigenere::full_break(&ct, &ptspace, &keyspace, &|x,y| x^y)
-            .unwrap();
+            .unwrap().next().unwrap();
         assert_eq!(pt.to_vec(), pt2);
     }
     
@@ -1499,7 +1499,7 @@ mod tests {
         let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
         let (pt2, _) = 
             vigenere::full_break(&ct, &ptspace, &keyspace, &|x,y| x^y)
-            .unwrap();
+            .unwrap().next().unwrap();
         assert_eq!(pt.to_vec(), pt2);
     }
 
