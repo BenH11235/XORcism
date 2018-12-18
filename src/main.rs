@@ -19,7 +19,7 @@ pub mod crypto {
     }
     
     pub fn unicity_coefficient<T:Glyph,K:Glyph> 
-    (keyspace:&Distribution<K>,ptspace:&Distribution<T>) -> Maybe<f64> {
+    (keyspace:&impl Distribution<K>,ptspace:&impl Distribution<T>) -> Maybe<f64> {
         match (keyspace.entropy(),ptspace.redundancy()) {
             (Ok(ke),Ok(pe)) => Ok(ke / pe),
             _ => Err(err::ENTROPY_CALC_ERROR)
@@ -116,8 +116,8 @@ pub mod crypto {
  
         pub fn simple_xor_break<'a,T,K> (   
         ct:         &       [T],
-        ptspace:    &       Distribution<T>,
-        keyspace:   &'a     Distribution<K>, 
+        ptspace:    &       impl Distribution<T>,
+        keyspace:   &'a     impl Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T)   
         ->          Maybe<(&'a K, Vec<T>)>
         where T: Glyph, K: Glyph {
@@ -136,8 +136,8 @@ pub mod crypto {
         //formula derived by requiring unicity distance per shred
         pub fn max_feasible_keylen<'a,T,K> (   
         ct:         &       [T],
-        ptspace:    &       Distribution<T>,
-        keyspace:   &'a     Distribution<K>
+        ptspace:    &       impl Distribution<T>,
+        keyspace:   &'a     impl Distribution<K>
         ) ->        Maybe<usize>
         where T: Glyph, K: Glyph {
             let uc = unicity_coefficient(keyspace,ptspace)?;
@@ -154,8 +154,8 @@ pub mod crypto {
 
         pub fn full_break<'a,T:'a,K> (   
         ct:         &'a     [T],
-        ptspace:    &'a     Distribution<T>,
-        keyspace:   &'a     Distribution<K>, 
+        ptspace:    &'a     impl Distribution<T>,
+        keyspace:   &'a     impl Distribution<K>, 
         comb:       &'a     impl Fn(&T,&K) -> T   
         ) ->        Maybe<
                         impl Iter<
