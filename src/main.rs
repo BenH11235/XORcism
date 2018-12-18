@@ -147,22 +147,18 @@ pub mod crypto {
             Ok(res as usize)
         }
 
-        pub fn full_break<'a,T,K> (   
-        ct:         &       [T],
-        ptspace:    &       Distribution<T>,
+        pub fn full_break_given_keylen<'a,T,K> (   
+        ct:         &'a     [T],
+        ptspace:    &'a     Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
-        comb:       &       impl Fn(&T,&K) -> T   
-        ) ->        Maybe<impl Iter<Vec<T>>>
+        comb:       &'a     impl Fn(&T,&K) -> T,
+        key_length:         usize
+        ) ->        Maybe<Vec<T>>
         where T: Glyph, K: Glyph {
-            let max_checked_keylen = max_feasible_keylen(ct,ptspace,keyspace)?;
-            if max_checked_keylen == 0 {
-                return Err(err::IMPOSSIBLE_PARAMETERS)
-            };
-            let klen_guess = likely_key_lengths(ct,max_checked_keylen)?;
-            let derived_shreds : Maybe<Vec<_>> = 
+            let decrypted_shreds: Maybe<Vec<_>> = 
                 ct
                 .iter()
-                .unzipn(klen_guess.clone().next().unwrap())
+                .unzipn(key_length)
                 .into_iter()
                 .map(|shred| {
                     let svec:Vec<T> = shred.cloned().collect();
@@ -170,7 +166,32 @@ pub mod crypto {
                     .map(|(_,s)| s.into_iter())
                 }).collect();
 
-            Ok(once(derived_shreds?.zipn().collect()))
+            decrypted_shreds.map(|x| x.zipn().collect())
+        }
+
+
+        pub fn full_break<'a,T:'a,K> (   
+        ct:         &'a     [T],
+        ptspace:    &'a     Distribution<T>,
+        keyspace:   &'a     Distribution<K>, 
+        comb:       &'a     impl Fn(&T,&K) -> T   
+        ) ->        Maybe<
+                        impl Iter<
+                            Maybe<Vec<T>>
+                        > + 'a
+                    >
+        where T: Glyph, K: Glyph {
+            let max_checked_keylen = max_feasible_keylen(ct,ptspace,keyspace).unwrap();
+            if max_checked_keylen == 0 {
+                return Err(err::IMPOSSIBLE_PARAMETERS)
+            };
+            let solutions = 
+                likely_key_lengths(ct,max_checked_keylen)?
+                .map(move |l|
+                    full_break_given_keylen(ct,ptspace,keyspace,comb,l)
+                );
+            Ok(solutions)
+            
         }
     }
 }
@@ -1188,6 +1209,10 @@ mod utils {
     use std::f64::EPSILON;
     use itertools::Step;
 
+    pub fn xor(x1:&u8,x2:&u8) -> u8 {
+        x1 ^ x2
+    }
+
         
     //Definition of vector trait 
     
@@ -1324,7 +1349,7 @@ mod utils {
 #[cfg(test)]
 mod tests {
     use utils;
-    use utils::{Average,FMax,ZipN,UnzipN};
+    use utils::{Average,FMax,ZipN,UnzipN,xor};
     use dist;
     use dist::{Prob,Distribution,binomial_p_estimate,kappa};
     use dist::known::{SHAKESPEARE,HEX,BASE64};
@@ -1466,7 +1491,7 @@ mod tests {
     fn simple_xor_break_test() {
         let pt = SAMPLE_TEXT;
         let key =  b"k";
-        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
+        let ct = vigenere::encrypt(pt,key,&xor);
         let ptspace = dist::from(&SHAKESPEARE);
         let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
         let (key2, pt2) = 
@@ -1480,12 +1505,12 @@ mod tests {
     fn full_break_test() {
         let pt = SAMPLE_TEXT;
         let key = b"key";
-        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
+        let ct = vigenere::encrypt(pt,key,&xor);
         let ptspace = dist::from(&SHAKESPEARE);
         let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
         let pt2 = 
-            vigenere::full_break(&ct, &ptspace, &keyspace, &|x,y| x^y)
-            .unwrap().next().unwrap();
+            vigenere::full_break(&ct, &ptspace, &keyspace, &xor)
+            .unwrap().next().unwrap().unwrap();
         assert_eq!(pt.to_vec(), pt2);
     }
     
@@ -1494,13 +1519,12 @@ mod tests {
     fn full_break_base64_test() {
         let pt = SAMPLE_TEXT_BASE64;
         let key = b"key";
-        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
+        let ct = vigenere::encrypt(pt,key,&xor);
         let ptspace = dist::from(&BASE64);
         let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
-        let (pt2, _) = 
-            vigenere::full_break(&ct, &ptspace, &keyspace, &|x,y| x^y)
-            .unwrap().next().unwrap();
-        assert_eq!(pt.to_vec(), pt2);
+        let solutions = 
+            vigenere::full_break(&ct, &ptspace, &keyspace, &xor).unwrap();
+        assert!(solutions.clone().any(|x| x==Ok(pt.to_vec())));
     }
 
 
