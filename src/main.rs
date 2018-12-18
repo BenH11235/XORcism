@@ -1338,6 +1338,19 @@ mod utils {
 
 pub mod xorcism {
 
+    pub mod dist {
+        use ::dist::{Distribution,Prob,known};
+        use std::collections::HashMap;
+
+        //try to use phf
+        
+        fn distributions() -> () {
+            let mut _distributions: HashMap<&str, &[(u8,Prob)]> = HashMap::new();
+            _distributions.insert("blah",&known::SHAKESPEARE);
+        }
+
+    }
+
     pub mod cli {
         use clap::{Arg,App,ArgMatches};
         
