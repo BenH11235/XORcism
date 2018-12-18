@@ -152,7 +152,7 @@ pub mod crypto {
         ptspace:    &       Distribution<T>,
         keyspace:   &'a     Distribution<K>, 
         comb:       &       impl Fn(&T,&K) -> T   
-        ) ->        Maybe<(Vec<T>,usize)>
+        ) ->        Maybe<Vec<T>>
         where T: Glyph, K: Glyph {
             let max_checked_keylen = max_feasible_keylen(ct,ptspace,keyspace)?;
             if max_checked_keylen == 0 {
@@ -170,7 +170,7 @@ pub mod crypto {
                     .map(|(_,s)| s.into_iter())
                 }).collect();
 
-            Ok((derived_shreds?.zipn().collect(), max_checked_keylen))
+            Ok(derived_shreds?.zipn().collect())
         }
     }
 }
@@ -1483,7 +1483,7 @@ mod tests {
         let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
         let ptspace = dist::from(&SHAKESPEARE);
         let keyspace = dist::uniform(&(0..=255).collect::<Vec<u8>>());
-        let (pt2, _) = 
+        let pt2 = 
             vigenere::full_break(&ct, &ptspace, &keyspace, &|x,y| x^y)
             .unwrap();
         assert_eq!(pt.to_vec(), pt2);
