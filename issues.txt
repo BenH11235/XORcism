@@ -4,6 +4,8 @@ Must-have before shipping
 
 * Add command line capacity
 
+* Add benchmark
+
 * If possible, split modules into separate files
 
 
