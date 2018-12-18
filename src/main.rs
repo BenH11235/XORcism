@@ -50,6 +50,8 @@ pub mod crypto {
                 "Function input out of range.";
             pub const KEY_SCORE_FAIL:&str = 
                 "Unexpected error when computing keylength score.";
+            pub const NO_FEASIBLE_KEYLEN:&str =
+                "No feasible key len exists for the parameters provided.";
             pub const IMPOSSIBLE_PARAMETERS:&str = 
                 "This ciphertext is theoretically impossible to break.";
         }
@@ -143,8 +145,11 @@ pub mod crypto {
                 (
                     ct.len() as f64
                     / uc
-                ).sqrt().floor();
-            Ok(res as usize)
+                ).sqrt().floor() as usize;
+            match res {
+                0 => Err(err::NO_FEASIBLE_KEYLEN),
+                _ => Ok(res)
+            }
         }
 
         pub fn full_break<'a,T:'a,K> (   
@@ -158,12 +163,11 @@ pub mod crypto {
                         > + 'a
                     >
         where T: Glyph, K: Glyph {
-            let max_checked_keylen = max_feasible_keylen(ct,ptspace,keyspace).unwrap();
-            if max_checked_keylen == 0 {
-                return Err(err::IMPOSSIBLE_PARAMETERS)
-            };
+            let max_checked_keylen = 
+                max_feasible_keylen(ct,ptspace,keyspace)
+                .map_err(|_| err::IMPOSSIBLE_PARAMETERS);
             let solutions = 
-                likely_key_lengths(ct,max_checked_keylen)?
+                likely_key_lengths(ct,max_checked_keylen?)?
                 .map(move |key_len| {
                     let decrypted_shreds: Maybe<Vec<_>> = 
                         ct
