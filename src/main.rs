@@ -147,29 +147,6 @@ pub mod crypto {
             Ok(res as usize)
         }
 
-        pub fn full_break_given_keylen<'a,T,K> (   
-        ct:         &'a     [T],
-        ptspace:    &'a     Distribution<T>,
-        keyspace:   &'a     Distribution<K>, 
-        comb:       &'a     impl Fn(&T,&K) -> T,
-        key_length:         usize
-        ) ->        Maybe<Vec<T>>
-        where T: Glyph, K: Glyph {
-            let decrypted_shreds: Maybe<Vec<_>> = 
-                ct
-                .iter()
-                .unzipn(key_length)
-                .into_iter()
-                .map(|shred| {
-                    let svec:Vec<T> = shred.cloned().collect();
-                    simple_xor_break(&svec,ptspace,keyspace,comb)
-                    .map(|(_,s)| s.into_iter())
-                }).collect();
-
-            decrypted_shreds.map(|x| x.zipn().collect())
-        }
-
-
         pub fn full_break<'a,T:'a,K> (   
         ct:         &'a     [T],
         ptspace:    &'a     Distribution<T>,
@@ -187,9 +164,20 @@ pub mod crypto {
             };
             let solutions = 
                 likely_key_lengths(ct,max_checked_keylen)?
-                .map(move |l|
-                    full_break_given_keylen(ct,ptspace,keyspace,comb,l)
-                );
+                .map(move |key_len| {
+                    let decrypted_shreds: Maybe<Vec<_>> = 
+                        ct
+                        .iter()
+                        .unzipn(key_len)
+                        .into_iter()
+                        .map(|shred| {
+                            let svec:Vec<T> = shred.cloned().collect();
+                            simple_xor_break(&svec,ptspace,keyspace,comb)
+                            .map(|(_,s)| s.into_iter())
+                        }).collect();
+                    decrypted_shreds.map(|x| x.zipn().collect())
+                });
+
             Ok(solutions)
             
         }
