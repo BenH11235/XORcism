@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate derive_more;
-
+extern crate clap;
 extern crate itertools;
 extern crate counter;
 

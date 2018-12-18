@@ -7,3 +7,4 @@ authors = ["ben"]
 itertools = "0.7.3"
 counter = "0.4.3"
 derive_more = "0.13.0"
+clap = "2.32.0"
