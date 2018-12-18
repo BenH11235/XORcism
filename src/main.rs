@@ -5,6 +5,7 @@ extern crate itertools;
 extern crate counter;
 
 
+
 pub mod crypto {
     use dist::Distribution;
     use utils::Glyph;
@@ -1335,6 +1336,37 @@ mod utils {
 
 }
 
+pub mod xorcism {
+
+    pub mod cli {
+        use clap::{Arg,App,ArgMatches};
+        
+        pub fn args() -> ArgMatches<'static> { 
+            App::new("Xorism")
+            .version("0.1")
+            .author("Ben Herzog <benherzog11235@gmail.com>")
+            .about("Breaks synchronous ciphers with a short period")
+                .arg(Arg::with_name("input_file")
+                    .short("f")
+                    .long("input_file")
+                    .value_name("INPUT_FILE")
+                    .help("Sets the input file to use")
+                    .required(true)
+                    .index(1))
+                .arg(Arg::with_name("plaintext distribution")
+                    .short("d")
+                    .long("plaintext distribution")
+                    .value_name("DISTRIBUTION")
+                    .help("Sets the assumed distribution of the original plaintext")
+                    .default_value("shakespeare")
+                )
+            .get_matches()
+        }
+    }
+}
+
+
+
 
 
 
@@ -1532,5 +1564,8 @@ mod tests {
 
 
 fn main() {
-    ;
+    use xorcism;
+    let args = xorcism::cli::args();
+    
+    println!("{:?}", args);
 }
