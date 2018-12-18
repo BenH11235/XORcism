@@ -13,6 +13,8 @@ Must-have before shipping
 Nice to have later
 * Add support to binary data [try to use prevalence of nulls for this last one]
 
+* Use error chaining
+
 * Right now the ciphertext distribution is assumed, implicitly, to be a uniform
 distribution over the range of the plaintext distribution.
 This is true for 'classic' use cases, but is not always true.
