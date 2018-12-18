@@ -1,10 +1,6 @@
 Must-have before shipping
 
-* Documentation
-
-* Provide sequence of possible solutions instead of single solution
-
-* Explain the issue with base64, hexadecimal
+* Documentation + Explain the issue with base64, hexadecimal
 
 * Add command line capacity
 
