@@ -30,13 +30,13 @@ pub mod crypto {
     pub mod vigenere {
         use std::iter::once;
         use itertools::{iterate,Itertools};
-        use utils::{Glyph,ZipN,UnzipN,fcmp};
+        use utils::{Glyph,ZipN,UnzipN,fcmp,Iter};
         use crypto::unicity_coefficient;
         use dist;
         use dist::{Distribution,kappa};
 
         const MAXIMUM_SHRED_SAMPLE_LENGTH:usize = 50;
-        const PERCENTAGE_OF_GRADUATING_KEYS:usize = 10;
+        const NUM_KEY_FINALISTS:usize = 10;
 
         type Maybe<T> = Result<T,err::Msg>;
 
@@ -44,8 +44,6 @@ pub mod crypto {
             pub type Msg = &'static str;
             pub const EMPTY_KEYSPACE:&str = 
                 "Encountered Empty Keyspace";
-            pub const CIPHERTEXT_TOO_SHORT:&str = 
-                "Minimum ciphertext length is 20 characters.";
             pub const MATHEMATICAL_PARADOX:&str =
                 "Congratulations, you have broken mathematics";
             pub const INVALID_INPUT:&str = 
@@ -91,11 +89,8 @@ pub mod crypto {
             }
         }
 
-        pub fn guess_key_length<T:Glyph>(ct:&[T], max_checked_len:usize) -> Maybe<usize> {
-            let num_finalists = 
-                (max_checked_len as f64 / PERCENTAGE_OF_GRADUATING_KEYS as f64)
-                .ceil() as usize;
-           
+        pub fn likely_key_lengths<'a,T:'a+Glyph>
+        (ct:&[T], max_checked_len:usize) -> Maybe<impl Iter<usize>> {
             let lengths_and_scores: Maybe<Vec<(usize,f64)>> = 
                 iterate(1, |keylen| keylen+1)
                 .take_while(|&keylen| keylen < max_checked_len)
@@ -105,15 +100,15 @@ pub mod crypto {
                      .map_err(|_| err::KEY_SCORE_FAIL)
                 ).collect();
             
-            lengths_and_scores?
-            .iter()
-            .sorted_by(|&(_,s1), &(_,s2)| fcmp(*s1,*s2).reverse())
-            .iter()
-            .map(|(l,_)| l)
-            .take(num_finalists)
-            .min()
-            .cloned()
-            .ok_or(err::CIPHERTEXT_TOO_SHORT)
+            let suggested_lengths = 
+                lengths_and_scores?
+                .into_iter()
+                .sorted_by(|&(_,s1), &(_,s2)| fcmp(s1,s2).reverse())
+                .into_iter()
+                .map(|(l,_)| l)
+                .take(NUM_KEY_FINALISTS);
+
+            Ok(suggested_lengths)
         }
 
  
@@ -163,11 +158,11 @@ pub mod crypto {
             if max_checked_keylen == 0 {
                 return Err(err::IMPOSSIBLE_PARAMETERS)
             };
-            let klen_guess = guess_key_length(ct,max_checked_keylen)?;
+            let klen_guess = likely_key_lengths(ct,max_checked_keylen)?;
             let derived_shreds : Maybe<Vec<_>> = 
                 ct
                 .iter()
-                .unzipn(klen_guess)
+                .unzipn(klen_guess.clone().next().unwrap())
                 .into_iter()
                 .map(|shred| {
                     let svec:Vec<T> = shred.cloned().collect();
@@ -1447,8 +1442,8 @@ mod tests {
         let key = b"longerkey";
         let pt = SAMPLE_TEXT;
         let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
-        let g_klen = vigenere::guess_key_length(&ct,20);
-        assert_eq!(g_klen, Ok(key.len()));
+        let likely_lengths = vigenere::likely_key_lengths(&ct,20);
+        assert!(likely_lengths.unwrap().any(|l| l==key.len()));
     }
 
     #[test]
