@@ -2,8 +2,6 @@ Must-have before shipping
 
 * Documentation + Explain the issue with base64, hexadecimal
 
-* Add command line capacity
-
 * Add benchmark
 
 * If possible, split modules into separate files
