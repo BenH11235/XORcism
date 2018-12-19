@@ -14,7 +14,6 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-fn main() {
 
     mod err {
 
@@ -22,51 +21,59 @@ fn main() {
         use std::fmt::Display;
         use std::fs::File;
 
+        pub const SHOULD_NOT_REACH_HERE:&str = 
+            "Execution should very definitely not have reached where it did";
+
         pub fn quit<T:Display>(e:T) {
             println!("Error: {}", e);
             exit(1);
         }
 
+        pub fn exit_on_error<T,E:Display>(res:Result<T,E>) -> T {
+            match res {
+                Ok(x) => Some(x),
+                Err(e) => {quit(e); None}
+            }.expect(SHOULD_NOT_REACH_HERE)
+        }
+
     }
+
+
+fn main() {
+
     use crypto::vigenere;
     use std::fs::File;
     use std::io::{Read,Write};
+    use err::exit_on_error;
     
     let args = cli::args();
 
 
-    let getarg = |argname| {
-        match args.value_of(argname) {
-            Some(arg) => Some(arg),
-            None => {
-                let msg = format!("missing argument {} despite CLI guarantee",argname);
-                err::quit(msg);
-                None
-            }
-        }.unwrap()
+    let exit_on_missing_arg = |argname| {
+        let res = match args.value_of(argname) {
+            Some(arg) => Ok(arg),
+            None => Err(format!("missing argument {} despite CLI guarantee",argname))
+        }; 
+        exit_on_error(res)
     };
-              
-    let ptspace =   builtin::dist::by_name(getarg("plaintext_distribution"));
-    let keyspace =  builtin::dist::by_name(getarg("key_distribution"));
-    let comb =      builtin::comb::by_name(getarg("combination_function"));
-    let input_file_name = getarg("input_file");
-    let output_file_name = getarg("output_file");
     
-    let input_file = match File::open(input_file_name) {
-        Ok(x) => Some(x),
-        Err(e) => {err::quit(e); None}
-    }.unwrap();
+    let ptspace_name = exit_on_missing_arg("plaintext_distribution");
+    let keyspace_name = exit_on_missing_arg("key_distribution");
+    let comb_func_name = exit_on_missing_arg("combination_function");
+    let input_file_name = exit_on_missing_arg("input_file");
+    let output_file_name = exit_on_missing_arg("output_file");
 
-    let mut output_file = match File::create(output_file_name) {
-        Ok(x) => Some(x),
-        Err(e) => {err::quit(e); None}
-    }.unwrap();
+    let ptspace =   builtin::dist::by_name(ptspace_name);
+    let keyspace =  builtin::dist::by_name(keyspace_name);
+    let comb_func = builtin::comb::by_name(comb_func_name);
+    let input_file = exit_on_error(File::open(input_file_name));
+    let mut output_file = exit_on_error(File::create(output_file_name));
 
     let ct: Vec<u8> = 
         input_file.bytes().collect::<Result<Vec<u8>,std::io::Error>>().unwrap();
 
     let solutions = 
-        vigenere::full_break(&ct, &ptspace, &keyspace, &comb).unwrap();
+        vigenere::full_break(&ct, &ptspace, &keyspace, &comb_func).unwrap();
 
     output_file.write_all(&solutions.clone().next().unwrap().unwrap());
     
