@@ -2,10 +2,6 @@ Must-have before shipping
 
 * Documentation + Explain the issue with base64, hexadecimal
 
-* If possible, split modules into separate files
-
-
-
 Nice to have later
 * Add support to binary data [try to use prevalence of nulls for this last one]
 
