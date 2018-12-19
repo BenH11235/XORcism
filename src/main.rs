@@ -29,7 +29,7 @@ mod tests;
             exit(1);
         }
 
-        pub fn exit_on_error<T,E:Display>(res:Result<T,E>) -> T {
+        pub fn ok_or_exit<T,E:Display>(res:Result<T,E>) -> T {
             match res {
                 Ok(x) => Some(x),
                 Err(e) => {quit(e); None}
@@ -44,30 +44,29 @@ fn main() {
     use crypto::vigenere;
     use std::fs::File;
     use std::io::{Read,Write};
-    use err::exit_on_error;
+    use err::ok_or_exit;
     
     let args = cli::args();
 
 
-    let exit_on_missing_arg = |argname| {
-        let res = match args.value_of(argname) {
-            Some(arg) => Ok(arg),
-            None => Err(format!("missing argument {} despite CLI guarantee",argname))
-        }; 
-        exit_on_error(res)
+    let get_arg_or_exit = |argname| {
+        let res = 
+            args.value_of(argname)
+            .ok_or(format!("Missing argument {}",argname));
+        ok_or_exit(res)
     };
     
-    let ptspace_name = exit_on_missing_arg("plaintext_distribution");
-    let keyspace_name = exit_on_missing_arg("key_distribution");
-    let comb_func_name = exit_on_missing_arg("combination_function");
-    let input_file_name = exit_on_missing_arg("input_file");
-    let output_file_name = exit_on_missing_arg("output_file");
+    let ptspace_name = get_arg_or_exit("plaintext_distribution");
+    let keyspace_name = get_arg_or_exit("key_distribution");
+    let comb_func_name = get_arg_or_exit("combination_function");
+    let input_file_name = get_arg_or_exit("input_file");
+    let output_file_name = get_arg_or_exit("output_file");
 
     let ptspace =   builtin::dist::by_name(ptspace_name);
     let keyspace =  builtin::dist::by_name(keyspace_name);
     let comb_func = builtin::comb::by_name(comb_func_name);
-    let input_file = exit_on_error(File::open(input_file_name));
-    let mut output_file = exit_on_error(File::create(output_file_name));
+    let input_file = ok_or_exit(File::open(input_file_name));
+    let mut output_file = ok_or_exit(File::create(output_file_name));
 
     let ct: Vec<u8> = 
         input_file.bytes().collect::<Result<Vec<u8>,std::io::Error>>().unwrap();
