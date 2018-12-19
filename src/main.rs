@@ -16,23 +16,21 @@ mod tests;
 
 
     mod err {
-
-        use std::process::exit;
         use std::fmt::Display;
         use std::fs::File;
 
         pub const SHOULD_NOT_REACH_HERE:&str = 
             "Execution should very definitely not have reached where it did";
 
-        pub fn quit<T:Display>(e:T) {
+        pub fn exit<T:Display>(e:T) {
             println!("Error: {}", e);
-            exit(1);
+            std::process::exit(1);
         }
 
         pub fn ok_or_exit<T,E:Display>(res:Result<T,E>) -> T {
             match res {
                 Ok(x) => Some(x),
-                Err(e) => {quit(e); None}
+                Err(e) => {exit(e); None}
             }.expect(SHOULD_NOT_REACH_HERE)
         }
 
