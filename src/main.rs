@@ -1614,7 +1614,7 @@ pub mod xorcism {
         use clap::{Arg,App,ArgMatches};
         
         pub fn args() -> ArgMatches<'static> { 
-            App::new("Xorism")
+            App::new("XorCism")
             .version("0.1")
             .author("Ben Herzog <benherzog11235@gmail.com>")
             .about("Breaks vigenere-like ciphers")
