@@ -1597,6 +1597,24 @@ mod utils {
 
 pub mod xorcism {
 
+    pub mod comb {
+        use utils;
+        
+        pub const COMB_BY_NAME:[(&str, &Fn(&u8,&u8)->u8);1] = [
+            ("xor", &utils::xor)
+        ];
+        
+        pub fn comb_by_name(lookup:&str) -> impl Fn(&u8,&u8) -> u8 {
+            COMB_BY_NAME
+            .iter()
+            .filter(|(n,d)| n==&lookup)
+            .map(|(n,d)| d)
+            .next()
+            .unwrap()
+        }
+
+    }
+
     pub mod dist {
         use ::dist as _d;
         use std::collections::HashMap;
