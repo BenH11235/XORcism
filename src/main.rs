@@ -1830,8 +1830,8 @@ mod tests {
     fn encrypt_decrypt_test() {
         let pt_initial = b"helloworld";
         let key = b"key";
-        let ct = vigenere::encrypt(pt_initial,key,&|x,y| x^y);
-        let pt_final = vigenere::decrypt(&ct,key,&|x,y| x^y);
+        let ct = vigenere::encrypt(pt_initial,key,&xor);
+        let pt_final = vigenere::decrypt(&ct,key,&xor);
         assert_eq!(pt_initial.to_vec(), pt_final);
     }
 
@@ -1839,7 +1839,7 @@ mod tests {
     fn guess_keylen_test() {
         let key = b"longerkey";
         let pt = SAMPLE_TEXT;
-        let ct = vigenere::encrypt(pt,key,&|x,y| x^y);
+        let ct = vigenere::encrypt(pt,key,&xor);
         let likely_lengths = vigenere::likely_key_lengths(&ct,20);
         assert!(likely_lengths.unwrap().any(|l| l==key.len()));
     }
@@ -1868,7 +1868,7 @@ mod tests {
         let ptspace = dist::from(&SHAKESPEARE);
         let keyspace = dist::from(&UNIFORM);
         let (key2, pt2) = 
-            vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&|x,y| x^y)
+            vigenere::simple_xor_break(&ct,&ptspace,&keyspace,&xor)
             .unwrap();
         assert_eq!(key[0],*key2);
         assert_eq!(pt.to_vec(), pt2);
