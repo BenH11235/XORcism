@@ -1600,12 +1600,12 @@ pub mod xorcism {
     pub mod comb {
         use utils;
         
-        pub const COMB_BY_NAME:[(&str, &Fn(&u8,&u8)->u8);1] = [
+        pub const BY_NAME:[(&str, &Fn(&u8,&u8)->u8);1] = [
             ("xor", &utils::xor)
         ];
         
-        pub fn comb_by_name(lookup:&str) -> impl Fn(&u8,&u8) -> u8 {
-            COMB_BY_NAME
+        pub fn by_name(lookup:&str) -> impl Fn(&u8,&u8) -> u8 {
+            BY_NAME
             .iter()
             .filter(|(n,d)| n==&lookup)
             .map(|(n,d)| d)
@@ -1613,13 +1613,22 @@ pub mod xorcism {
             .unwrap()
         }
 
+        pub fn names() -> Vec<&'static str> { 
+            BY_NAME
+            .into_iter()
+            .cloned()
+            .map(|(n,_)| n)
+            .collect()
+        }
+
+
     }
 
     pub mod dist {
         use ::dist as _d;
         use std::collections::HashMap;
 
-        pub const DIST_BY_NAME:[(&str,&[(u8,_d::Prob)]);4] = [
+        pub const BY_NAME:[(&str,&[(u8,_d::Prob)]);4] = [
             ("shakespeare", &_d::known::SHAKESPEARE),
             ("base64", &_d::known::BASE64),
             ("hex", &_d::known::HEX),
@@ -1627,9 +1636,9 @@ pub mod xorcism {
         ];
 
         //no stable support for compile-time hashmaps, so here we are...
-        pub fn dist_by_name(lookup:&str) -> impl _d::Distribution<u8> {
+        pub fn by_name(lookup:&str) -> impl _d::Distribution<u8> {
             let keyval_pairs: &[(u8,_d::Prob)] = 
-                DIST_BY_NAME
+                BY_NAME
                 .iter()
                 .filter(|(n,d)| n==&lookup)
                 .map(|(n,d)| d)
@@ -1637,21 +1646,24 @@ pub mod xorcism {
                 .unwrap();
             _d::from(keyval_pairs)
         }
+
+        pub fn names() -> Vec<&'static str> { 
+            BY_NAME
+            .into_iter()
+            .cloned()
+            .map(|(n,_)| n)
+            .collect()
+        }
+
     }
     
 
     pub mod cli {
         use clap::{Arg,App,ArgMatches};
-        use xorcism::dist::DIST_BY_NAME;
+        use xorcism::{dist,comb};
 
         pub fn args() -> ArgMatches<'static> { 
-            let dist_names: Vec<&str> = 
-                DIST_BY_NAME
-                .into_iter()
-                .cloned()
-                .map(|(n,_)| n)
-                .collect();
-
+            
             App::new("XorCism")
             .version("0.1")
             .author("Ben Herzog <benherzog11235@gmail.com>")
@@ -1661,12 +1673,18 @@ pub mod xorcism {
                     .help("Sets the input file to use")
                     .required(true)
                     .index(1))
+                .arg(Arg::with_name("output_file")
+                    .value_name("OUTPUT_FILE")
+                    .help("Sets the output file to write to")
+                    .required(true)
+                    .index(2)
+                )
                 .arg(Arg::with_name("plaintext_distribution")
                     .short("-ptd")
                     .long("--plaintext-distribution")
                     .value_name("PT_DIST")
                     .help("Sets the assumed distribution of the plaintext characters")
-                    .possible_values(&dist_names)
+                    .possible_values(&dist::names())
                     .default_value("shakespeare")
                 )
                 .arg(Arg::with_name("key_distribution")
@@ -1674,10 +1692,18 @@ pub mod xorcism {
                     .long("--key-distribution")
                     .value_name("KEY_DIST")
                     .help("Sets the assumed distribution of the key characters")
-                    .possible_values(&dist_names)
+                    .possible_values(&dist::names())
                     .default_value("uniform")
                 )
-            .get_matches()
+                .arg(Arg::with_name("combination_function")
+                    .short("-cf")
+                    .long("--combination-function")
+                    .value_name("COMB_FUNC")
+                    .help("Sets the assumed f where f(key_byte, plain_byte) = cipher_byte")
+                    .possible_values(&comb::names())
+                    .default_value("xor")
+                )
+                .get_matches()
         }
     }
 }
@@ -1881,8 +1907,10 @@ mod tests {
 
 
 fn main() {
-    use xorcism::{cli,dist};
+    use xorcism::{cli,dist,comb};
     use crypto::vigenere;
+    use std::fs::File;
+    use std::io::{Read,Write};
     
     use utils;
     use utils::{Average,FMax,ZipN,UnzipN,xor};
@@ -1895,13 +1923,28 @@ fn main() {
     let pt = SAMPLE_TEXT;
     let key = b"key";
     let ct = vigenere::encrypt(&pt,key,&xor);
+
     let ptspace = 
-        dist::dist_by_name(args.value_of("plaintext_distribution").unwrap());
+        dist::by_name(args.value_of("plaintext_distribution").unwrap());
     let keyspace =     
-        dist::dist_by_name(args.value_of("key_distribution").unwrap());
+        dist::by_name(args.value_of("key_distribution").unwrap());
+    let comb = 
+        comb::by_name(args.value_of("combination_function").unwrap());
+    let input_file_name = 
+        args.value_of("input_file").unwrap();
+    let output_file_name =
+        args.value_of("output_file").unwrap();
+    
+    let mut input_file = File::open(input_file_name).unwrap();
+    let ct: Vec<u8> = input_file.bytes().collect::<Result<Vec<u8>,std::io::Error>>().unwrap();
+
     let solutions = 
-        vigenere::full_break(&ct, &ptspace, &keyspace, &xor).unwrap();
+        vigenere::full_break(&ct, &ptspace, &keyspace, &comb).unwrap();
+
     assert!(solutions.clone().any(|x| x==Ok(pt.to_vec())));
     println!("hurray");
+
+    let mut output_file = File::create(output_file_name).unwrap();
+    output_file.write_all(&solutions.clone().next().unwrap().unwrap());
     
 }
