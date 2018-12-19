@@ -15,6 +15,8 @@ Nice to have later
 
 * Use error chaining
 
+* Right now key character choice does not take into account the actual distribution of the key space. Rather, it implicitly assumes all key characters to have equal probability (even those with probability 0). This should be fixed.
+
 * Right now the ciphertext distribution is assumed, implicitly, to be a uniform
 distribution over the range of the plaintext distribution.
 This is true for 'classic' use cases, but is not always true.
