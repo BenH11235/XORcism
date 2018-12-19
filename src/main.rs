@@ -1607,6 +1607,18 @@ pub mod xorcism {
             ("hex", &_d::known::HEX),
             ("uniform", &_d::known::UNIFORM)
         ];
+
+        //no stable support for compile-time hashmaps, so here we are...
+        pub fn dist_by_name(lookup:&str) -> impl _d::Distribution<u8> {
+            let keyval_pairs: &[(u8,_d::Prob)] = 
+                DIST_BY_NAME
+                .iter()
+                .filter(|(n,d)| n==&lookup)
+                .map(|(n,d)| d)
+                .next()
+                .unwrap();
+            _d::from(keyval_pairs)
+        }
     }
     
 
@@ -1851,8 +1863,27 @@ mod tests {
 
 
 fn main() {
-    use xorcism;
-    let args = xorcism::cli::args();
+    use xorcism::{cli,dist};
+    use crypto::vigenere;
     
-    println!("{:?}", args);
+    use utils;
+    use utils::{Average,FMax,ZipN,UnzipN,xor};
+    use itertools::{iterate,assert_equal};
+    
+    pub const SAMPLE_TEXT:&[u8] = b"Moloch is introduced as the answer to a question -- C. S. Lewis' question in Hierarchy of Philosophers -- what does it? Earth could be fair, and all men glad and wise. Instead we have prisons, smokestacks, asylums. What sphinx of cement and aluminum breaks open their skulls and eats up their imagination?\n\nAnd Ginsberg answers: Moloch does it.\n\nThere's a passage in the Pincipia Discordia where Malaclypse complains to the Goddess about the evils of human society. \"Everyone is hurting each other, the planet is rampant with injustices, whole societies plunder groups of their own people, mothers imprison sons, children perish while brothers war.\"\n\nThe Goddess answers: \"What is the matter with that, if it's what you want to do?\"\n\nMalaclypse: \"But nobody wants it! Everybody hates it!\"\n\nGoddess: \"Oh. Well, then stop.\"";
+
+    let args = cli::args();
+
+    let pt = SAMPLE_TEXT;
+    let key = b"key";
+    let ct = vigenere::encrypt(&pt,key,&xor);
+    let ptspace = 
+        dist::dist_by_name(args.value_of("plaintext_distribution").unwrap());
+    let keyspace =     
+        dist::dist_by_name(args.value_of("key_distribution").unwrap());
+    let solutions = 
+        vigenere::full_break(&ct, &ptspace, &keyspace, &xor).unwrap();
+    assert!(solutions.clone().any(|x| x==Ok(pt.to_vec())));
+    println!("hurray");
+    
 }
