@@ -1465,6 +1465,10 @@ mod utils {
         x1 ^ x2
     }
 
+    pub fn add(x1:&u8,x2:&u8) -> u8 {
+        ((*x1 as u32 + *x2 as u32) % 256) as u8
+    }
+
         
     //Definition of vector trait 
     
@@ -1600,8 +1604,9 @@ pub mod xorcism {
     pub mod comb {
         use utils;
         
-        pub const BY_NAME:[(&str, &Fn(&u8,&u8)->u8);1] = [
-            ("xor", &utils::xor)
+        pub const BY_NAME:[(&str, &Fn(&u8,&u8)->u8);2] = [
+            ("xor", &utils::xor),
+            ("add_mod_256", &utils::add)
         ];
         
         pub fn by_name(lookup:&str) -> impl Fn(&u8,&u8) -> u8 {
@@ -1664,7 +1669,7 @@ pub mod xorcism {
 
         pub fn args() -> ArgMatches<'static> { 
             
-            App::new("XorCism")
+            App::new("XORcism")
             .version("0.1")
             .author("Ben Herzog <benherzog11235@gmail.com>")
             .about("Breaks vigenere-like ciphers")
@@ -1717,7 +1722,7 @@ pub mod xorcism {
 #[cfg(test)]
 mod tests {
     use utils;
-    use utils::{Average,FMax,ZipN,UnzipN,xor};
+    use utils::{Average,FMax,ZipN,UnzipN,xor,add};
     use dist;
     use dist::{Prob,Distribution,binomial_p_estimate,kappa};
     use dist::known::{SHAKESPEARE,HEX,BASE64,UNIFORM};
@@ -1882,6 +1887,19 @@ mod tests {
         assert_eq!(pt.to_vec(), pt2);
     }
     
+    #[test]
+    fn full_break_add_test() {
+        let pt = SAMPLE_TEXT;
+        let key = b"key";
+        let ct = vigenere::encrypt(pt,key,&add);
+        let ptspace = dist::from(&SHAKESPEARE);
+        let keyspace = dist::from(&UNIFORM);
+        let pt2 = 
+            vigenere::full_break(&ct, &ptspace, &keyspace, &add)
+            .unwrap().next().unwrap().unwrap();
+        assert_eq!(pt.to_vec(), pt2);
+    }
+
     #[test]
     #[cfg(ignore)]
     fn full_break_base64_test() {
