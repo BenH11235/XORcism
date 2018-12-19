@@ -9,8 +9,7 @@ extern crate counter;
 pub mod crypto {
     use dist::Distribution;
     use utils::Glyph;
-    //takes arguments by reference so 'Vigenere Compose'
-    //of non-copy types can have the same prototype
+    
     type Maybe<T> = Result<T,err::Msg>;
 
     mod err {
@@ -1460,6 +1459,9 @@ mod utils {
     use std::hash::Hash;
     use std::f64::EPSILON;
     use itertools::Step;
+   
+    //these take arguments by reference so 'Vigenere Compose'
+    //of non-copy types can have the same prototype
 
     pub fn xor(x1:&u8,x2:&u8) -> u8 {
         x1 ^ x2
