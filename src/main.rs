@@ -1601,10 +1601,11 @@ pub mod xorcism {
         use ::dist as _d;
         use std::collections::HashMap;
 
-        const DIST_BY_NAME:[(&str,&[(u8,_d::Prob)]);3] = [
+        const DIST_BY_NAME:[(&str,&[(u8,_d::Prob)]);4] = [
             ("shakespeare", &_d::known::SHAKESPEARE),
             ("base64", &_d::known::BASE64),
-            ("hex", &_d::known::HEX)
+            ("hex", &_d::known::HEX),
+            ("uniform", &_d::known::UNIFORM)
         ];
     }
     
@@ -1616,7 +1617,7 @@ pub mod xorcism {
             App::new("Xorism")
             .version("0.1")
             .author("Ben Herzog <benherzog11235@gmail.com>")
-            .about("Breaks synchronous ciphers with a short period")
+            .about("Breaks vigenere-like ciphers")
                 .arg(Arg::with_name("input_file")
                     .short("f")
                     .long("input_file")
@@ -1625,11 +1626,18 @@ pub mod xorcism {
                     .required(true)
                     .index(1))
                 .arg(Arg::with_name("plaintext distribution")
-                    .short("d")
+                    .short("ptdist")
                     .long("plaintext distribution")
-                    .value_name("DISTRIBUTION")
-                    .help("Sets the assumed distribution of the original plaintext")
+                    .value_name("PT_DIST")
+                    .help("Sets the assumed distribution of the plaintext characters")
                     .default_value("shakespeare")
+                )
+                .arg(Arg::with_name("key distribution")
+                    .short("kdist")
+                    .long("key character distribution")
+                    .value_name("KEY_DIST")
+                    .help("Sets the assumed distribution of the key characters")
+                    .default_value("uniform")
                 )
             .get_matches()
         }
