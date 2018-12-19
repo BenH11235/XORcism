@@ -27,6 +27,7 @@ b64_chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + "/
 base64_dict = {c: 1/len(b64_chars) for c in b64_chars}
 
 hex_dict = {c: 1/len(string.hexdigits) for c in string.hexdigits}
+uniform_dict = {chr(i): 1/256 for i in range(256)}
 
 shakespeare_dict = {
     ' ': 0.23706244495666062,
@@ -126,7 +127,8 @@ shakespeare_dict = {
 supported = [
     ("BASE64", base64_dict), 
     ("HEX", hex_dict), 
-    ("SHAKESPEARE", shakespeare_dict)
+    ("SHAKESPEARE", shakespeare_dict),
+    ("UNIFORM", uniform_dict)
 ]
 
 
