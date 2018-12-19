@@ -37,7 +37,7 @@ mod tests;
     }
 
 
-fn main() {
+fn main() -> Result<(),String> {
 
     use crypto::vigenere;
     use std::fs::File;
@@ -63,15 +63,22 @@ fn main() {
     let ptspace =   builtin::dist::by_name(ptspace_name);
     let keyspace =  builtin::dist::by_name(keyspace_name);
     let comb_func = builtin::comb::by_name(comb_func_name);
-    let input_file = ok_or_exit(File::open(input_file_name));
-    let mut output_file = ok_or_exit(File::create(output_file_name));
+    let input_file = 
+        File::open(input_file_name)
+        .map_err(|e| format!("Could not open input file: {}",e))?;
+        
+    let mut output_file = 
+        File::create(output_file_name)
+        .map_err(|e| format!("Could not create output file: {}", e))?;
 
-    let ct: Vec<u8> = 
-        input_file.bytes().collect::<Result<Vec<u8>,std::io::Error>>().unwrap();
+    let _ct: Result<Vec<u8>,std::io::Error> = input_file.bytes().collect();
+    let ct = _ct.map_err(|e| format!("Could not read input file: {}",e))?;
 
     let solutions = 
-        vigenere::full_break(&ct, &ptspace, &keyspace, &comb_func).unwrap();
+        vigenere::full_break(&ct, &ptspace, &keyspace, &comb_func)
+        .map_err(|e| format!("Break attempt failed: {}", e))?;
 
     output_file.write_all(&solutions.clone().next().unwrap().unwrap());
+    Ok(())
     
 }
