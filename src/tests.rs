@@ -124,7 +124,7 @@ fn compile_distribution_test() {
     let d = dist::from(&SHAKESPEARE);
     utils::approx_equal(
         d.get(&b'a'), 
-        Prob(0.044825042106379775)
+        Prob(0.044_825)
     );
 }
 
