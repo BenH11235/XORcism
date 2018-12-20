@@ -22,7 +22,7 @@ fn main() -> Result<(),String> {
     let args = cli::args();
         
     let ciphertext = 
-        File::open(args.get("input_file_name")?)
+        File::open(args.get("input_file")?)
         .map_err(|e| format!("Could not open input file: {}",e))?
         .bytes()
         .collect::<Result<Vec<u8>,std::io::Error>>()
@@ -36,7 +36,7 @@ fn main() -> Result<(),String> {
         vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
         .map_err(|e| format!("Break attempt failed: {}", e))?;
     
-    File::create(args.get("output_file_name")?)
+    File::create(args.get("output_file")?)
     .map_err(|e| format!("Could not create output file: {}", e))?
     .write_all(&solutions.clone().next().unwrap().unwrap())
     .map_err(|e| format!("Failed to write to output file: {}",e))?;
