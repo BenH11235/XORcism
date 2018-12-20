@@ -46,39 +46,30 @@ fn main() -> Result<(),String> {
     
     let args = cli::args();
 
-
-    let get_arg_or_exit = |argname| {
-        let res = 
-            args.value_of(argname)
-            .ok_or(format!("Missing argument {}",argname));
-        ok_or_exit(res)
+    let getarg = |argname| {
+        args.value_of(argname)
+        .ok_or(format!("Failed to resolve argument {}",argname))
     };
-    
-    let ptspace_name = get_arg_or_exit("plaintext_distribution");
-    let keyspace_name = get_arg_or_exit("key_distribution");
-    let comb_func_name = get_arg_or_exit("combination_function");
-    let input_file_name = get_arg_or_exit("input_file");
-    let output_file_name = get_arg_or_exit("output_file");
 
-    let ptspace =   builtin::dist::by_name(ptspace_name);
-    let keyspace =  builtin::dist::by_name(keyspace_name);
-    let comb_func = builtin::comb::by_name(comb_func_name);
-    let input_file = 
-        File::open(input_file_name)
-        .map_err(|e| format!("Could not open input file: {}",e))?;
+    let ciphertext = 
+        File::open(getarg("input_file_name")?)
+        .map_err(|e| format!("Could not open input file: {}",e))?
+        .bytes()
+        .collect::<Result<Vec<u8>,std::io::Error>>()
+        .map_err(|e| format!("Could not read input file: {}",e))?;
         
-    let mut output_file = 
-        File::create(output_file_name)
-        .map_err(|e| format!("Could not create output file: {}", e))?;
-
-    let _ct: Result<Vec<u8>,std::io::Error> = input_file.bytes().collect();
-    let ct = _ct.map_err(|e| format!("Could not read input file: {}",e))?;
+    let pt_dist =  builtin::dist::by_name(getarg("plaintext_distribution")?);
+    let key_dist = builtin::dist::by_name(getarg("key_distribution")?);
+    let comb_func = builtin::comb::by_name(getarg("combination_function")?);
 
     let solutions = 
-        vigenere::full_break(&ct, &ptspace, &keyspace, &comb_func)
+        vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
         .map_err(|e| format!("Break attempt failed: {}", e))?;
+    
+    File::create(getarg("output_file_name")?)
+    .map_err(|e| format!("Could not create output file: {}", e))?
+    .write_all(&solutions.clone().next().unwrap().unwrap());
 
-    output_file.write_all(&solutions.clone().next().unwrap().unwrap());
     Ok(())
     
 }
