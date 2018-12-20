@@ -50,13 +50,14 @@ fn main() -> Result<(),String> {
                 format!("Failed to compute possible solution: {}",e)
             )?;
 
-        println!("Proposed solution (peek):");
-        
+        println!("Proposed solution (peek of first 500 characters):");
+        println!("---------");
         { 
-            let peek = String::from_utf8_lossy(&proposed_solution[..100]);
+            let peek = String::from_utf8_lossy(&proposed_solution[..500]);
             println!("{}", peek);
         }
-        
+        println!("---------");
+
 
         'get_cmd: loop {
             cmd.clear();
