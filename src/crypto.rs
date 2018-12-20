@@ -22,7 +22,7 @@ pub mod vigenere {
     use std::iter::once;
     use std::cmp::Ordering;
     use itertools::{iterate,Itertools};
-    use utils::{Glyph,ZipN,UnzipN,fcmp,Iter,with_preceding_divisors};
+    use utils::{Glyph,ZipN,UnzipN,fcmp,with_preceding_divisors};
     use crypto::unicity_coefficient;
     use dist;
     use dist::{Distribution,kappa};
@@ -105,15 +105,15 @@ pub mod vigenere {
             with_preceding_divisors(lengths.iter())
             .zip(scores)
             .sorted_by(
-                |((keylen1,divisors1),score1),
-                 ((keylen2,divisors2),score2)| {
+                |((_,divisors1),score1),
+                 ((_,divisors2),score2)| {
                 let ord = divisors1.cmp(divisors2);
                 match ord {
                     Ordering::Greater | Ordering::Less => ord,
                     Ordering::Equal => fcmp(*score1,*score2).reverse()
                 }
             }).into_iter()
-            .map(|((l,d),s)| *l)
+            .map(|((l,_),_)| *l)
             .collect();
        
         Ok(suggested_lengths)
