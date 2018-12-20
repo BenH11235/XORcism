@@ -39,8 +39,7 @@ fn main() -> Result<(),String> {
 
     let solutions = 
         vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
-        .map_err(|e| format!("Failed to break ciphertext: {}", e))?
-        .unique();
+        .map_err(|e| format!("Failed to break ciphertext: {}", e))?;
 
     let stdin = io::stdin();
     'choose_solution: for solution in solutions {
