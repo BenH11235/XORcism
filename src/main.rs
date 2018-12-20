@@ -40,7 +40,7 @@ fn main() -> Result<(),String> {
     let solutions = 
         vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
         .map_err(|e| format!("Failed to break ciphertext: {}", e))?
-        .dedup();
+        .unique();
 
     let stdin = io::stdin();
     'choose_solution: for solution in solutions {
@@ -51,10 +51,12 @@ fn main() -> Result<(),String> {
             )?;
 
         println!("Proposed solution (peek):");
+        
         { 
             let peek = String::from_utf8_lossy(&proposed_solution[..100]);
             println!("{}", peek);
         }
+        
 
         'get_cmd: loop {
             cmd.clear();
