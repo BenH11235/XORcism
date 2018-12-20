@@ -1,5 +1,5 @@
 use dist::Distribution;
-use utils::Glyph;
+use utils::{Glyph};
 
 type Maybe<T> = Result<T,err::Msg>;
 
@@ -20,8 +20,9 @@ pub fn unicity_coefficient<T:Glyph,K:Glyph>
    
 pub mod vigenere {
     use std::iter::once;
+    use std::cmp::Ordering;
     use itertools::{iterate,Itertools};
-    use utils::{Glyph,ZipN,UnzipN,fcmp,Iter};
+    use utils::{Glyph,ZipN,UnzipN,fcmp,Iter,with_preceding_divisors};
     use crypto::unicity_coefficient;
     use dist;
     use dist::{Distribution,kappa};
@@ -83,7 +84,7 @@ pub mod vigenere {
     }
 
     pub fn likely_key_lengths<'a,T:'a+Glyph>
-    (ct:&[T], max_checked_len:usize) -> Maybe<impl Iter<usize>> {
+    (ct:&[T], max_checked_len:usize) -> Maybe<Vec<usize>> {
         let lengths_and_scores: Maybe<Vec<(usize,f64)>> = 
             iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
@@ -92,15 +93,31 @@ pub mod vigenere {
                  .map(|s| (l,s))
                  .map_err(|_| err::KEY_SCORE_FAIL)
             ).collect();
-        
-        let suggested_lengths = 
+
+        let (lengths,scores):(Vec<usize>,Vec<f64>) = 
             lengths_and_scores?
             .into_iter()
             .sorted_by(|&(_,s1), &(_,s2)| fcmp(s1,s2).reverse())
             .into_iter()
-            .map(|(l,_)| l)
-            .take(NUM_KEY_FINALISTS);
+            .unzip();
 
+        let suggested_lengths:Vec<usize> = 
+            with_preceding_divisors(lengths.iter())
+            .zip(scores)
+            .sorted_by(
+                |((keylen1,divisors1),score1),
+                 ((keylen2,divisors2),score2)| {
+                let ord = divisors1.cmp(divisors2);
+                match ord {
+                    Ordering::Greater | Ordering::Less => ord,
+                    Ordering::Equal => fcmp(*score1,*score2).reverse()
+                }
+            }).into_iter()
+            .map(|((l,d),s)| *l)
+            .collect();
+
+        println!("Lengths: {:?}", suggested_lengths);
+       
         Ok(suggested_lengths)
     }
 
@@ -159,6 +176,7 @@ pub mod vigenere {
             .map_err(|_| err::IMPOSSIBLE_PARAMETERS);
         let solutions = 
             likely_key_lengths(ct,max_checked_keylen?)?
+            .into_iter()
             .map(move |key_len| {
                 let decrypted_shreds: Maybe<Vec<_>> = 
                     ct
