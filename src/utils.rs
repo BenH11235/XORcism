@@ -17,6 +17,21 @@ pub fn add(x1:&u8,x2:&u8) -> u8 {
     ((u32::from(*x1) + u32::from(*x2)) % 256) as u8
 }
 
+pub fn with_preceding_divisors<'a>(nums: impl Iter<&'a usize>+Clone) 
+-> impl Iter<(&'a usize,usize)> {
+    nums.clone()
+    .enumerate()
+    .map(move |(i,x)|
+         (
+            x,
+            nums.clone()
+            .take(i)
+            .filter(|y| x % *y == 0)
+            .count()
+        )
+    )
+}
+
     
 //Definition of vector trait 
 

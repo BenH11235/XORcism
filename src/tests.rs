@@ -1,5 +1,5 @@
 use utils;
-use utils::{Average,FMax,ZipN,UnzipN,xor,add};
+use utils::{Average,FMax,ZipN,UnzipN,xor,add,with_preceding_divisors};
 use dist;
 use dist::{Prob,Distribution,binomial_p_estimate,kappa};
 use dist::known::{SHAKESPEARE,UNIFORM};
@@ -195,5 +195,13 @@ fn binomial_p_estimate_test() {
     let successes = 29;
     let est_prob = binomial_p_estimate(trials,successes);
     utils::approx_equal(est_prob, Prob(0.44));
+}
+
+#[test]
+fn preceding_divisors_test() {
+    let elements = vec![6,3,9,12,4,5,8,10];
+    let result:Vec<(&usize,usize)> = with_preceding_divisors(elements.iter()).collect();
+    let expected = vec![(&6,0),(&3,0),(&9,1),(&12,2),(&4,0),(&5,0),(&8,1),(&10,1)];
+    assert_eq!(result,expected);
 }
 
