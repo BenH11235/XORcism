@@ -9,7 +9,15 @@ def line(c,p):
         disp_c = c
     else :
         disp_c = "\\x"+"{0:0{1}x}".format(ord(c),2)
-    return "(b'{}', Prob({:.6f}))".format(disp_c, round(float(p),6)) 
+
+    p_literal = "{:.6f}".format(round(float(p),6))
+    p_literal_underscored =\
+        "".join(
+                [c+"_" if i>1 and i%3==1 and i<len(p_literal)-1 
+                else c 
+                for (i,c) in enumerate(p_literal)
+        ])
+    return "(b'{}', Prob({}))".format(disp_c, p_literal_underscored) 
 
 def display_prob_from_dict(d,name):
     for i in range(256):
