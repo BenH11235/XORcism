@@ -1,6 +1,5 @@
 Must-have before shipping
 
-* Fix YOLO-style unwraps at main
 * Documentation + Explain the issue with base64, hexadecimal
 
 Nice to have later
@@ -18,8 +17,6 @@ This is low priority right now because:
 2. Fixing this will be fairly involved work.
 But it should be fixed eventually.
 
-
-* Make key choice take into account the issue of divisibility. E.g. sort by increasing score; create cutoff where largest disparity takes place; all keys above the cutoff graduate; start iterating on 'trees' of key lengths 
 
 * Full mathematical analysis of "coincidence" distribution? (Science fiction, even if you solve the naive problem you still have the issue of 'leaky probabilities', if key size = 2 how does this affect the distribution of coincidences for key size = 7? The answer exists in theory but will involve the word 'coprime'. But maybe more attainable than it seems at first sight: some willingness to approximate + Markov bound will maybe help)
 
