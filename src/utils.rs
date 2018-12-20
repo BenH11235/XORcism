@@ -14,7 +14,7 @@ pub fn xor(x1:&u8,x2:&u8) -> u8 {
 }
 
 pub fn add(x1:&u8,x2:&u8) -> u8 {
-    ((*x1 as u32 + *x2 as u32) % 256) as u8
+    ((u32::from(*x1) + u32::from(*x2)) % 256) as u8
 }
 
     

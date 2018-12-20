@@ -52,7 +52,7 @@ pub trait GetArg<'a> {
 impl<'a> GetArg<'a> for ArgMatches<'a> {
     fn get(&self,argname:&str) -> Result<&str,String> {
         self.value_of(argname)
-        .ok_or(format!("Failed to resolve argument {}",argname))
+        .ok_or_else(|| format!("Failed to resolve argument {}",argname))
     }
 }
 
