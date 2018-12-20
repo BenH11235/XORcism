@@ -28,7 +28,6 @@ pub mod vigenere {
     use dist::{Distribution,kappa};
 
     const MAXIMUM_SHRED_SAMPLE_LENGTH:usize = 50;
-    const NUM_KEY_FINALISTS:usize = 10;
 
     type Maybe<T> = Result<T,err::Msg>;
 
