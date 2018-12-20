@@ -61,7 +61,8 @@ fn main() -> Result<(),String> {
         'get_cmd: loop {
             cmd.clear();
             println!("(a)ccept or try (n)ext solution?");
-            stdin.read_line(&mut cmd);
+            stdin.read_line(&mut cmd)
+            .map_err(|e| format!("Failed to read command: {}",e))?;
             match cmd.as_str().trim() {
                 "a" => {
                     chosen_solution = Ok(proposed_solution);
