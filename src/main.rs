@@ -38,7 +38,8 @@ fn main() -> Result<(),String> {
     
     File::create(args.get("output_file_name")?)
     .map_err(|e| format!("Could not create output file: {}", e))?
-    .write_all(&solutions.clone().next().unwrap().unwrap());
+    .write_all(&solutions.clone().next().unwrap().unwrap())
+    .map_err(|e| format!("Failed to write to output file: {}",e))?;
 
     Ok(())
     

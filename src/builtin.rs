@@ -9,8 +9,8 @@ pub mod comb {
         pub fn by_name(lookup:&str) -> Result<impl Fn(&u8,&u8) -> u8, String> {
             BY_NAME
             .iter()
-            .filter(|(n,d)| n==&lookup)
-            .map(|(n,d)| d)
+            .filter(|(n,_)| n==&lookup)
+            .map(|(_,d)| d)
             .next()
             .ok_or(
                 format!("Failed to resolve built-in combination function {}",lookup)
@@ -29,8 +29,7 @@ pub mod comb {
     }
 
 pub mod dist {
-    use std::collections::HashMap;
-
+    
     pub const BY_NAME:[(&str,&[(u8,::dist::Prob)]);4] = [
         ("shakespeare", &::dist::known::SHAKESPEARE),
         ("base64", &::dist::known::BASE64),
@@ -43,8 +42,8 @@ pub mod dist {
     Result<impl ::dist::Distribution<u8>, String> {
         BY_NAME
         .iter()
-        .filter(|(n,d)| n==&lookup)
-        .map(|(n,d)| d)
+        .filter(|(n,_)| n==&lookup)
+        .map(|(_,d)| d)
         .next()
         .map(|keyval_pairs| ::dist::from(keyval_pairs))
         .ok_or(format!("Failed to resolve built-in distribution {}",lookup))

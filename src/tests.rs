@@ -2,7 +2,7 @@ use utils;
 use utils::{Average,FMax,ZipN,UnzipN,xor,add};
 use dist;
 use dist::{Prob,Distribution,binomial_p_estimate,kappa};
-use dist::known::{SHAKESPEARE,HEX,BASE64,UNIFORM};
+use dist::known::{SHAKESPEARE,UNIFORM};
 use crypto::{vigenere};
 use itertools::{iterate,assert_equal};
 

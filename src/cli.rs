@@ -1,6 +1,5 @@
 use clap::{Arg,App,ArgMatches};
 use builtin::{dist,comb};
-use std::io::{self,Read};
 
 pub fn args() -> ArgMatches<'static> { 
     App::new("XORcism")
