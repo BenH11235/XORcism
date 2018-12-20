@@ -6,7 +6,6 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use std::f64::EPSILON;
 use itertools::Step;
-use rayon::prelude::*;
 
 //these take arguments by reference so 'Vigenere Compose'
 //of non-copy types can have the same prototype
