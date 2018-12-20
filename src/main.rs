@@ -53,9 +53,9 @@ fn main() -> Result<(),String> {
         .collect::<Result<Vec<u8>,std::io::Error>>()
         .map_err(|e| format!("Could not read input file: {}",e))?;
         
-    let pt_dist =  builtin::dist::by_name(args.get("plaintext_distribution")?);
-    let key_dist = builtin::dist::by_name(args.get("key_distribution")?);
-    let comb_func = builtin::comb::by_name(args.get("combination_function")?);
+    let pt_dist =  builtin::dist::by_name(args.get("plaintext_distribution")?)?;
+    let key_dist = builtin::dist::by_name(args.get("key_distribution")?)?;
+    let comb_func = builtin::comb::by_name(args.get("combination_function")?)?;
 
     let solutions = 
         vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
