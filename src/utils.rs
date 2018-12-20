@@ -2,6 +2,7 @@ use std::ops::{Add,Div,Mul};
 use itertools::{Itertools,iterate};
 use std::cmp::Ordering;
 use std::fmt::{Display,Debug};
+use std::collections::HashSet;
 use std::hash::Hash;
 use std::f64::EPSILON;
 use itertools::Step;
@@ -157,6 +158,45 @@ where TI: Iterator<Item=T>+Sized+Clone {
         .step(m)
     ).collect()
 
+    }
+}
+
+pub struct _QuickUnique<T,TI> 
+where T:Eq+Hash+Clone, TI: Iterator<Item=T> {
+    iter: TI,
+    seen: HashSet<T>
+}
+
+pub trait QuickUnique<T,TI>
+where T:Eq+Hash+Clone, TI: Iterator<Item=T> {
+    fn unique(self) -> _QuickUnique<T,TI>;
+}
+
+impl<T,TI> QuickUnique<T,TI> for TI 
+where T:Eq+Hash+Clone, TI: Iterator<Item=T> {
+    fn unique(self) -> _QuickUnique<T,TI> {
+        _QuickUnique { iter:self, seen:HashSet::new() }
+        }
+}
+
+impl<T,TI> Iterator for _QuickUnique<T,TI>
+where T:Eq+Hash+Clone, TI: Iterator<Item=T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        loop {
+            let _candidate = self.iter.next();
+            match _candidate {
+                None => {
+                    return None;
+                } Some(candidate) => {
+                    if !self.seen.contains(&candidate) {
+                        self.seen.insert(candidate.clone());
+                        return Some(candidate);
+                    }
+                }
+            }
+        }
     }
 }
 

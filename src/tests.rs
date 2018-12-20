@@ -1,5 +1,5 @@
 use utils;
-use utils::{Average,FMax,ZipN,UnzipN,xor,add,with_preceding_divisors};
+use utils::{Average,FMax,ZipN,UnzipN,xor,add,with_preceding_divisors,QuickUnique};
 use dist;
 use dist::{Prob,Distribution,binomial_p_estimate,kappa};
 use dist::known::{SHAKESPEARE,UNIFORM};
@@ -205,3 +205,9 @@ fn preceding_divisors_test() {
     assert_eq!(result,expected);
 }
 
+#[test]
+fn quick_unique_test() {
+    let elements = vec![1,1,2,1,3,1,3,3,4,1,2,4];
+    let uniques: Vec<u32> = elements.into_iter().unique().collect();
+    assert_eq!(uniques, vec![1,2,3,4]);
+}
