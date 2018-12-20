@@ -4,7 +4,6 @@ extern crate itertools;
 extern crate counter;
 extern crate clap;
 
-
 mod cli;
 mod crypto;
 mod dist;
@@ -17,33 +16,9 @@ mod tests;
 use crypto::vigenere;
 use std::fs::File;
 use std::io::{Read,Write};
-use err::ok_or_exit;
 use cli::GetArg;
 
-    mod err {
-        use std::fmt::Display;
-        use std::fs::File;
-
-        pub const SHOULD_NOT_REACH_HERE:&str = 
-            "Execution should very definitely not have reached where it did";
-
-        pub fn exit<T:Display>(e:T) {
-            println!("Error: {}", e);
-            std::process::exit(1);
-        }
-
-        pub fn ok_or_exit<T,E:Display>(res:Result<T,E>) -> T {
-            match res {
-                Ok(x) => Some(x),
-                Err(e) => {exit(e); None}
-            }.expect(SHOULD_NOT_REACH_HERE)
-        }
-
-    }
-
-
 fn main() -> Result<(),String> {
-        
     let args = cli::args();
         
     let ciphertext = 
