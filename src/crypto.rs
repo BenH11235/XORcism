@@ -87,6 +87,7 @@ pub mod vigenere {
         let lengths_and_scores: Maybe<Vec<(usize,f64)>> = 
             iterate(1, |keylen| keylen+1)
             .take_while(|&keylen| keylen < max_checked_len)
+            .par_bridge()
             .map(|l| 
                  key_len_score(&ct,l)
                  .map(|s| (l,s))
