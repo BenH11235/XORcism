@@ -116,7 +116,7 @@ fn guess_keylen_test() {
     let pt = SAMPLE_TEXT;
     let ct = vigenere::encrypt(pt,key,&xor);
     let likely_lengths = vigenere::likely_key_lengths(&ct,20);
-    assert!(likely_lengths.unwrap().any(|l| l==key.len()));
+    assert!(likely_lengths.unwrap().into_iter().any(|l| l==key.len()));
 }
 
 #[test]
