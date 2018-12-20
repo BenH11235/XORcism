@@ -1,5 +1,7 @@
+
 pub mod comb {
         use utils;
+        use rayon::prelude::*;
 
         type CombFunc = fn(&u8,&u8)->u8;
         
@@ -8,12 +10,11 @@ pub mod comb {
             ("add_mod_256", utils::add)
         ];
         
-        pub fn by_name(lookup:&str) -> Result<impl Fn(&u8,&u8) -> u8 + Sync, String> {
+        pub fn by_name(lookup:&str) -> Result<impl Fn(&u8,&u8) -> u8 + Send + Sync, String> {
             BY_NAME
-            .iter()
-            .filter(|(n,_)| n==&lookup)
+            .par_iter()
+            .find_any(|(n,_)| n==&lookup)
             .map(|(_,d)| d)
-            .next()
             .ok_or_else(||
                 format!("Failed to resolve built-in combination function {}",lookup)
             )
@@ -31,6 +32,8 @@ pub mod comb {
     }
 
 pub mod dist {
+
+    use rayon::prelude::*;
     
     pub const BY_NAME:[(&str,&[(u8,::dist::Prob)]) ; 4] = [
         ("shakespeare", &::dist::known::SHAKESPEARE),
@@ -43,11 +46,9 @@ pub mod dist {
     pub fn by_name(lookup:&str) -> 
     Result<impl ::dist::Distribution<u8>, String> {
         BY_NAME
-        .iter()
-        .filter(|(n,_)| n==&lookup)
-        .map(|(_,d)| d)
-        .next()
-        .map(|keyval_pairs| ::dist::from(keyval_pairs))
+        .par_iter()
+        .find_any(|(n,_)| n==&lookup)
+        .map(|(_,d)| ::dist::from(d))
         .ok_or_else(||
             format!("Failed to resolve built-in distribution {}",lookup)
         )
