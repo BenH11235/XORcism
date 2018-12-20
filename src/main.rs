@@ -17,7 +17,8 @@ use crypto::vigenere;
 use std::fs::File;
 use std::io::{self,Read,Write};
 use cli::GetArg;
-use itertools::Itertools;
+//use itertools::Itertools;
+use utils::QuickUnique;
 
 fn main() -> Result<(),String> {
     let args = cli::args();
@@ -39,7 +40,8 @@ fn main() -> Result<(),String> {
 
     let solutions = 
         vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
-        .map_err(|e| format!("Failed to break ciphertext: {}", e))?;
+        .map_err(|e| format!("Failed to break ciphertext: {}", e))?
+        .unique();
 
     let stdin = io::stdin();
     'choose_solution: for solution in solutions {
