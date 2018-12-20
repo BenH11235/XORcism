@@ -14,6 +14,11 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+use crypto::vigenere;
+use std::fs::File;
+use std::io::{Read,Write};
+use err::ok_or_exit;
+use cli::GetArg;
 
     mod err {
         use std::fmt::Display;
@@ -38,35 +43,25 @@ mod tests;
 
 
 fn main() -> Result<(),String> {
-
-    use crypto::vigenere;
-    use std::fs::File;
-    use std::io::{Read,Write};
-    use err::ok_or_exit;
-    
+        
     let args = cli::args();
-
-    let getarg = |argname| {
-        args.value_of(argname)
-        .ok_or(format!("Failed to resolve argument {}",argname))
-    };
-
+        
     let ciphertext = 
-        File::open(getarg("input_file_name")?)
+        File::open(args.get("input_file_name")?)
         .map_err(|e| format!("Could not open input file: {}",e))?
         .bytes()
         .collect::<Result<Vec<u8>,std::io::Error>>()
         .map_err(|e| format!("Could not read input file: {}",e))?;
         
-    let pt_dist =  builtin::dist::by_name(getarg("plaintext_distribution")?);
-    let key_dist = builtin::dist::by_name(getarg("key_distribution")?);
-    let comb_func = builtin::comb::by_name(getarg("combination_function")?);
+    let pt_dist =  builtin::dist::by_name(args.get("plaintext_distribution")?);
+    let key_dist = builtin::dist::by_name(args.get("key_distribution")?);
+    let comb_func = builtin::comb::by_name(args.get("combination_function")?);
 
     let solutions = 
         vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
         .map_err(|e| format!("Break attempt failed: {}", e))?;
     
-    File::create(getarg("output_file_name")?)
+    File::create(args.get("output_file_name")?)
     .map_err(|e| format!("Could not create output file: {}", e))?
     .write_all(&solutions.clone().next().unwrap().unwrap());
 

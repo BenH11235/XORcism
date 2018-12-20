@@ -45,3 +45,16 @@ pub fn args() -> ArgMatches<'static> {
         )
         .get_matches()
 }
+
+pub trait GetArg<'a> {
+    fn get(&self,argname:&str) -> Result<&str,String>;
+}
+
+impl<'a> GetArg<'a> for ArgMatches<'a> {
+    fn get(&self,argname:&str) -> Result<&str,String> {
+        self.value_of(argname)
+        .ok_or(format!("Failed to resolve argument {}",argname))
+    }
+}
+
+
