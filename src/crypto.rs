@@ -26,6 +26,7 @@ pub mod vigenere {
     use crypto::unicity_coefficient;
     use dist;
     use dist::{Distribution,kappa};
+    use rayon::prelude::*;
 
 
     type Maybe<T> = Result<T,err::Msg>;
@@ -47,24 +48,24 @@ pub mod vigenere {
     }
     
     pub fn transform<T:Glyph,K:Glyph>
-    (buf:&[T], key:&[K], comb: &impl Fn(&T,&K) -> T)
+    (buf:&[T], key:&[K], comb: &(impl (Fn(&T,&K) -> T) + Sync))
     -> Vec<T> {
         let keylen = key.len();
         buf
-        .iter()
+        .par_iter()
         .enumerate()
         .map(|(i,c)| comb(&c, &key[i % keylen]))
         .collect()
     }
     
     pub fn encrypt<T:Glyph,K:Glyph>
-    (pt:&[T], key:&[K], comb: &impl Fn(&T,&K) -> T)
+    (pt:&[T], key:&[K], comb: &(impl Fn(&T,&K) -> T + Sync))
     -> Vec<T> {
         transform(&pt,&key,&comb)
     }
 
     pub fn decrypt<T:Glyph,K:Glyph>
-    (ct:&[T], key:&[K], comb: &impl Fn(&T,&K) -> T)
+    (ct:&[T], key:&[K], comb: &(impl Fn(&T,&K) -> T + Sync))
     -> Vec<T> {
         transform(&ct,&key,&comb)
     }
@@ -120,14 +121,14 @@ pub mod vigenere {
 
     pub fn simple_xor_break<'a,T,K> (   
     ct:         &       [T],
-    ptspace:    &       impl Distribution<T>,
+    ptspace:    &       (impl Distribution<T> + Sync),
     keyspace:   &'a     impl Distribution<K>, 
-    comb:       &       impl Fn(&T,&K) -> T)   
-    ->          Maybe<(&'a K, Vec<T>)>
+    comb:       &       (impl Fn(&T,&K) -> T + Sync)
+    ) ->          Maybe<(&'a K, Vec<T>)>
     where T: Glyph, K: Glyph {
         keyspace
         .probabilities()
-        .into_iter()
+        .into_par_iter()
         .map(|(k,_)| { 
             let kv:Vec<K> = once(k).cloned().collect(); 
             (k,decrypt(&ct, &kv, &comb))
@@ -158,12 +159,12 @@ pub mod vigenere {
 
     pub fn full_break<'a,T:'a,K> (   
     ct:         &'a     [T],
-    ptspace:    &'a     impl Distribution<T>,
-    keyspace:   &'a     impl Distribution<K>, 
-    comb:       &'a     impl Fn(&T,&K) -> T   
+    ptspace:    &'a     (impl Distribution<T> + Sync),
+    keyspace:   &'a     (impl Distribution<K> + Sync), 
+    comb:       &'a     (impl Fn(&T,&K) -> T  + Sync) 
     ) ->        Maybe<
-                    impl Iter<
-                        Maybe<Vec<T>>
+                    impl Iterator<
+                        Item=Maybe<Vec<T>>
                     > + 'a
                 >
     where T: Glyph, K: Glyph {

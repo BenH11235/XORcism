@@ -1,14 +1,14 @@
 pub mod comb {
         use utils;
 
-        type CombFunc = Fn(&u8,&u8)->u8;
+        type CombFunc = fn(&u8,&u8)->u8;
         
-        pub const BY_NAME:[(&str, &CombFunc) ; 2] = [
-            ("xor", &utils::xor),
-            ("add_mod_256", &utils::add)
+        pub const BY_NAME:[(&str, CombFunc) ; 2] = [
+            ("xor", utils::xor),
+            ("add_mod_256", utils::add)
         ];
         
-        pub fn by_name(lookup:&str) -> Result<impl Fn(&u8,&u8) -> u8, String> {
+        pub fn by_name(lookup:&str) -> Result<impl Fn(&u8,&u8) -> u8 + Sync, String> {
             BY_NAME
             .iter()
             .filter(|(n,_)| n==&lookup)

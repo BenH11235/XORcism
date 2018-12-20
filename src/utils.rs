@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use std::f64::EPSILON;
 use itertools::Step;
+use rayon::prelude::*;
 
 //these take arguments by reference so 'Vigenere Compose'
 //of non-copy types can have the same prototype
@@ -55,8 +56,8 @@ where T :
 pub trait Iter<X> : Iterator<Item=X>+Clone {}
 impl<X,T:Clone> Iter<X> for T where T: Iterator<Item=X> {}
 
-pub trait Glyph: Eq+Hash+Clone+Ord+Display+Debug {}
-impl<T> Glyph for T where T:Eq+Hash+Clone+Ord+Display+Debug {}
+pub trait Glyph: Eq+Hash+Clone+Ord+Display+Debug+Send+Sync {}
+impl<T> Glyph for T where T:Eq+Hash+Clone+Ord+Display+Debug+Send+Sync {}
 
 pub trait Average<T> : Clone {
     fn average(&self) -> T; 
@@ -149,14 +150,14 @@ pub trait UnzipN : Sized+Clone {
 impl<T,TI> UnzipN for TI
 where TI: Iterator<Item=T>+Sized+Clone {
     fn unzipn(self,m:usize) -> Vec<Step<TI>> {
-    iterate(0, |i| i+1)
-    .take(m)
-    .map(|r| 
-        self
-        .clone() //Need to construct m iterators from one
-        .dropping(r)
-        .step(m)
-    ).collect()
+        iterate(0, |i| i+1)
+        .take(m)
+        .map(|r| 
+            self
+            .clone() //Need to construct m iterators from one
+            .dropping(r)
+            .step(m)
+        ).collect()
 
     }
 }

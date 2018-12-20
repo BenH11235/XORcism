@@ -3,6 +3,7 @@ extern crate derive_more;
 extern crate itertools;
 extern crate counter;
 extern crate clap;
+extern crate rayon;
 
 mod cli;
 mod crypto;
@@ -17,7 +18,6 @@ use crypto::vigenere;
 use std::fs::File;
 use std::io::{self,Read,Write};
 use cli::GetArg;
-//use itertools::Itertools;
 use utils::QuickUnique;
 
 fn main() -> Result<(),String> {
