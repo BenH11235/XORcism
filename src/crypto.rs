@@ -179,7 +179,7 @@ pub mod vigenere {
                     ct
                     .iter()
                     .unzipn(key_len)
-                    .into_iter()
+                    .into_par_iter()
                     .map(|shred| {
                         let svec:Vec<T> = shred.cloned().collect();
                         simple_xor_break(&svec,ptspace,keyspace,comb)
