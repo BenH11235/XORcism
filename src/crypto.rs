@@ -27,7 +27,6 @@ pub mod vigenere {
     use dist;
     use dist::{Distribution,kappa};
 
-    const MAXIMUM_SHRED_SAMPLE_LENGTH:usize = 50;
 
     type Maybe<T> = Result<T,err::Msg>;
 
@@ -76,7 +75,7 @@ pub mod vigenere {
             return Err(err::INVALID_INPUT);
         } let shreds = ct.iter().unzipn(n);
         if let Some(s) = shreds.into_iter().next() {
-            Ok(kappa(&s.take(MAXIMUM_SHRED_SAMPLE_LENGTH)))
+            Ok(kappa(&s))
         } else {
             Err(err::MATHEMATICAL_PARADOX)
         }
@@ -114,8 +113,6 @@ pub mod vigenere {
             }).into_iter()
             .map(|((l,d),s)| *l)
             .collect();
-
-        println!("Lengths: {:?}", suggested_lengths);
        
         Ok(suggested_lengths)
     }
