@@ -135,10 +135,8 @@ pub mod vigenere {
         keyspace
         .probabilities()
         .into_par_iter()
-        .map(|(k,_)| { 
-            let kv:Vec<K> = once(k).cloned().collect(); 
-            (k,decrypt(&ct, &kv, &comb))
-        }).min_by(|(_,c1),(_,c2)| 
+        .map(|(k,_)|  (k,decrypt(&ct,&[k.clone()],&comb)))
+        .min_by(|(_,c1),(_,c2)| 
             dist::surprisecmp(&ptspace.surprise(c1),&ptspace.surprise(c2))
         ).ok_or(err::EMPTY_KEYSPACE)
     }
