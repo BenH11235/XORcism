@@ -50,11 +50,16 @@ pub mod vigenere {
     pub fn transform<T:Glyph,K:Glyph>
     (buf:&[T], key:&[K], comb: &(impl (Fn(&T,&K) -> T) + Sync))
     -> Vec<T> {
-        let keylen = key.len();
         buf
-        .par_iter()
+        .into_iter()
+        .unzipn(key.len())
+        .into_par_iter()
         .enumerate()
-        .map(|(i,c)| comb(&c, &key[i % keylen]))
+        .map(|(i,shred)| (&key[i%key.len()], shred))
+        .map(|(k,shred)| shred.map(move |c| comb(&c, k)))
+        .collect::<Vec<_>>()
+        .zipn()
+        .into_iter()
         .collect()
     }
     
