@@ -19,7 +19,6 @@ pub fn unicity_coefficient<T:Glyph,K:Glyph>
 
    
 pub mod vigenere {
-    use std::iter::once;
     use std::cmp::Ordering;
     use itertools::{iterate,Itertools};
     use utils::{Glyph,ZipN,UnzipN,fcmp,with_preceding_divisors};
@@ -123,7 +122,6 @@ pub mod vigenere {
        
         Ok(suggested_lengths)
     }
-
 
     pub fn simple_xor_break<'a,T,K> (   
     ct:         &       [T],
