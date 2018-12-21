@@ -1,6 +1,6 @@
 # Introduction
 
-XORcism is a FOSS command-line tool that breaks "rotating xor" style ciphers. It is written in [Rust](https://www.rust-lang.org/), with a moderate emphasis on test cases, parallelism, running time and memory efficiency. XORcism takes about 12 seconds on a standard laptop to decrypt a full bible that's been encrypted with a 975-byte key, which you're invited to try for yourself (`xorcism tora_cipher_975.bin`).
+XORcism is a FOSS command-line tool that breaks "rotating xor" style ciphers. It is written in [Rust](https://www.rust-lang.org/), with a moderate emphasis on test cases, parallelism, running time and memory efficiency. XORcism takes about 6 seconds on a standard laptop to decrypt a full bible that's been encrypted with a 975-byte key, which you're invited to try for yourself (`xorcism tora_cipher_975.bin`).
 
 Xorcism supports both xor and modulo-2^32-addition based encryption. Support for modulo-947 multiplication of non-null bytes can easily be added, if that sort of thing ever becomes popular.
 
