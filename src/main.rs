@@ -16,6 +16,7 @@ mod tests;
 
 use crypto::vigenere;
 use std::fs::File;
+use std::cmp::min;
 use std::io::{self,Read,Write};
 use cli::GetArg;
 use utils::QuickUnique;
@@ -54,7 +55,8 @@ fn main() -> Result<(),String> {
         println!("Proposed solution (peek of first 500 characters):");
         println!("---------");
         { 
-            let peek = String::from_utf8_lossy(&proposed_solution[..500]);
+            let peek_len = min(proposed_solution.len(),500);
+            let peek = String::from_utf8_lossy(&proposed_solution[..peek_len]);
             println!("{}", peek);
         }
         println!("---------");
