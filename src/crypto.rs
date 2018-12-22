@@ -1,6 +1,7 @@
 use dist::Distribution;
 use utils::{Glyph};
 
+
 type Maybe<T> = Result<T,err::Msg>;
 
 mod err {
@@ -19,7 +20,7 @@ pub fn unicity_coefficient<T:Glyph,K:Glyph>
 
    
 pub mod vigenere {
-    use std::cmp::Ordering;
+    use std::cmp::{Ordering,min};
     use itertools::{iterate,Itertools};
     use utils::{Glyph,ZipN,UnzipN,fcmp,with_preceding_divisors};
     use crypto::unicity_coefficient;
@@ -27,6 +28,7 @@ pub mod vigenere {
     use dist::{Distribution,kappa};
     use rayon::prelude::*;
 
+    const op:f64 = 3e-9; //approximate time per char, determined experimentally
 
     type Maybe<T> = Result<T,err::Msg>;
 
@@ -170,11 +172,16 @@ pub mod vigenere {
                     > + 'a
                 >
     where T: Glyph, K: Glyph {
-        let max_checked_keylen = 
-            max_feasible_keylen(ct,ptspace,keyspace)
-            .map_err(|_| err::IMPOSSIBLE_PARAMETERS);
+        let max_feasible_keylen_performance = 
+            (10.0 / (ct.len() as f64*op)).floor() as usize;
+        let max_feasible_keylen_cryptographically = 
+            max_feasible_keylen(ct,ptspace,keyspace)?;
+        let max_checked_keylen = min(
+            max_feasible_keylen_cryptographically,
+            max_feasible_keylen_performance
+        );
         let solutions = 
-            likely_key_lengths(ct,max_checked_keylen?)?
+            likely_key_lengths(ct,max_checked_keylen)?
             .into_iter()
             .map(move |key_len| {
                 let decrypted_shreds: Maybe<Vec<_>> = 
