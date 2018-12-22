@@ -162,7 +162,7 @@ where T:    Glyph,
     let opportunities:usize = pairs(samples);
     match opportunities {
         0 => f64::from(0), //fair enough value for this edge case
-        _ => coincidences as f64 / opportunities as f64
+        _ => binomial_p_estimate(opportunities,coincidences).val()
     }
 }
 
