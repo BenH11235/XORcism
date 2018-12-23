@@ -133,9 +133,10 @@ This is a list of known ciphertexts that XORcism will fail to decipher.
 
 * Binary data -- as a direct result of the above. We're planning to toy with some approaches to this; it may be more tractable, because binary data tends to have more structure than proper line noise.
 
+* Any ciphertext where the key size is over 1000, due to the stop-gap performance mitigations mentioned in section 2.2.1.4.
+
 * Tried to run XORcism on some ciphertext, didn't get the result you want? Contact us with the details, and we'll list it here.
 
-* Any ciphertext where the key size is over 1000, due to the stop-gap performance mitigations introduced earlier.
 
 # 3. Usage
 
