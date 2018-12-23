@@ -21,14 +21,14 @@ The method used is similar to the one used by the first person to ever break thi
 5. If the end user is not satisfied with the result, try again for the next most highly scored key length.
 6. Repeat until out of key length, or user hits ctrl+C in anger.
 
-## 1. Why did you write this?
+# 1. Why did you write this?
 
 1. It seemed like a good way to get better at Rust.
 2. We took note of Halvar Flake's [Keynote Talk](https://www.sstic.org/media/SSTIC2018/SSTIC-actes/2018_ouverture/SSTIC2018-Slides-2018_ouverture-flake.pdf) at [SSTIC 2018](https://www.sstic.org) where he argues that tools in the RE community are closed-source, closed-binary, unit-test-free, memory-inefficient, throwaway single-threaded python "frameworks" with zero interoperability or separation of concerns, full of "deadline is tomorrow" hacks, written to check a box for a presentation that's full of non-reproducible examples and non-applicable hyperbolic claims. We tried, Halvar.
 
-#2. Technical Details
+# 2. Technical Details
 
-##2.1 Overview of the cipher
+## 2.1 Overview of the cipher
 
 The modern rotating xor is a form of what's classically known as a "Vigenère cipher", after Blaise de Vigenère, a French cryptographer [who did not invent it](https://en.wikipedia.org/wiki/Stigler%27s_law_of_eponymy) in the 16th century. The cipher is described by the following formula:
 
@@ -59,7 +59,7 @@ A strategy therefore suggests itself: Iterate over all possible key lengths; cou
 
 Unfortunately, it doesn't work. When we implemented the above logic word-for-word, and tried it on a very vanilla 800-odd character ciphertext that'd been encrypted with the even more vanilla 3-character key, `key`, the algorithm failed, and insisted that the correct character length is 9 characters instead.
 
-### 2.2.1.2 Wait, what do you mean "it didn't work"?
+#### 2.2.1.2 Wait, what do you mean "it didn't work"?
 
 It is our professional opinion that when algorithms such as the above fail, people take the news with a much better attitude than they should. Suppose you tried using the quadratic formula on a suitable equation, and got the wrong result. This would be a *big deal*. You would check your calculations many times over, and certainly you won't say "oh, well; time to tweak the formula, then".
 
@@ -87,7 +87,7 @@ To summarize, a fully involved mathematical analysis and literature review of th
 
 The result is not a capital-S Solution, but it seems to work well enough for at least some use cases.
 
-### 2.2.1.3 Mitigating the Mess of Malignant Multiples
+#### 2.2.1.3 Mitigating the Mess of Malignant Multiples
 
 When naïve coincidence counting produced the wrong answer, we searched for clues in the actual coincidence ratios associated with each possible key length. The source of the problem became quickly apparent: the correct key length _k_ received a relatively high score, but so did _2k_, _3k_, and every multiple of _k_. Worse, the scores of multiples of _k_ were basically not distinguishable from those of the correct _k_, and would often be even higher. In retrospect, it's not too difficult to see why this happens: The partition you get from a guessed key length of (let's say) _3k_ is exactly the partition you get from guessing  _k_, only with each part broken into 3 smaller parts. Doing this shouldn't affect the ratio of coincidences (equal character pairs), since the smaller parts are still drawn from the same character distribution.
 
@@ -100,7 +100,7 @@ Disappointed with our original approach, we finally settled on the "shoo, you mu
 
 This seemed to be working well enough to counter the decoy multiples problem, so we left it alone.
 
-# 2.2.1.4 Performance hits and overfitting
+#### 2.2.1.4 Performance hits and overfitting
 
 Since our eventual solution to the multiples issue did not include a limit to the number of candidates considered, we quickly discovered that a large number of key length candidates can cause various other headaches. 
 
@@ -125,7 +125,7 @@ Consider that individual decryption could take into account the distribution of 
 
 Further, there is no functionality right now to ask the program to make another guess as to the decryption of one of the shreds, though that certainly would have been helpful.
 
-## When to expect a decryption failure
+## 2.3 When to expect a decryption failure
 
 This is a list of known ciphertexts that XORcism will fail to decipher.
 
@@ -137,7 +137,7 @@ This is a list of known ciphertexts that XORcism will fail to decipher.
 
 * Any ciphertext where the key size is over 1000, due to the stop-gap performance mitigations introduced earlier.
 
-## Usage
+# 3. Usage
 
 ```
 xorcism [OPTIONS] <INPUT_FILE>
