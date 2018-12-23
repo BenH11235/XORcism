@@ -10,7 +10,7 @@ def line(c,p):
     else :
         disp_c = "\\x"+"{0:0{1}x}".format(ord(c),2)
 
-    p_literal = "{:.9f}".format(round(float(p),9))
+    p_literal = "{:.12f}".format(round(float(p),12))
     p_literal_underscored =\
         "".join(
                 [c+"_" if i>1 and i%3==1 and i<len(p_literal)-1 
