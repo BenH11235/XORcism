@@ -18,6 +18,9 @@ pub fn add(x1:&u8,x2:&u8) -> u8 {
     ((u32::from(*x1) + u32::from(*x2)) % 256) as u8
 }
 
+
+
+//Quadratic running time for the lose. This needs to be fixed
 pub fn with_preceding_divisors<'a>(nums: impl Iter<&'a usize>+Clone) 
 -> impl Iter<(&'a usize,usize)> {
     nums.clone()
@@ -142,6 +145,9 @@ where TI: Iterator<Item=T> {
     }
 }
 
+//No 'impl trait' in traits means no lazy evaluation, which means we need a
+//separate function if we don't want to take a huge performance hit when we
+//just want to evaluate the first shred. Needless code duplication, here we come!
 pub trait UnzipN : Sized+Clone {
     fn unzipn(self,usize) -> Vec<Step<Self>>; //No `impl trait` in traits =(
 }
@@ -159,6 +165,20 @@ where TI: Iterator<Item=T>+Sized+Clone {
         ).collect()
 
     }
+}
+
+pub trait FirstShredUnzipN : Sized+Clone {
+    fn first_shred_unzipn(self,usize) -> Step<Self>;
+}
+
+impl<T,TI> FirstShredUnzipN for TI
+where TI: Iterator<Item=T>+Sized+Clone {
+    fn first_shred_unzipn(self,m:usize) -> Step<TI> {
+        self
+        .clone() //Need to construct m iterators from one
+        .step(m)
+    }
+    
 }
 
 pub struct _QuickUnique<T,TI> 
