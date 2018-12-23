@@ -3,9 +3,9 @@ use builtin::{dist,comb};
 
 pub fn args() -> ArgMatches<'static> { 
     App::new("XORcism")
-    .version("0.1")
+    .version("0.1.0")
     .author("Ben Herzog <benherzog11235@gmail.com>")
-    .about("Breaks vigenere-like ciphers")
+    .about("Breaks Vigenère-like ciphers")
         .arg(Arg::with_name("input_file")
             .value_name("INPUT_FILE")
             .help("Sets the input file to use")
