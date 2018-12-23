@@ -22,13 +22,14 @@ pub fn unicity_coefficient<T:Glyph,K:Glyph>
 pub mod vigenere {
     use std::cmp::{Ordering,min};
     use itertools::{iterate,Itertools};
-    use utils::{Glyph,ZipN,UnzipN,fcmp,with_preceding_divisors};
+    use utils::{Glyph,ZipN,UnzipN,FirstShredUnzipN,fcmp,with_preceding_divisors};
     use crypto::unicity_coefficient;
     use dist;
     use dist::{Distribution,kappa};
     use rayon::prelude::*;
 
-    const op:f64 = 3e-9; //approximate time per char, determined experimentally
+    //currently necessary for performance reasons
+    const MAX_CHECKED_KEY_LEN_UPPER_BOUND:usize = 1000; 
 
     type Maybe<T> = Result<T,err::Msg>;
 
@@ -80,12 +81,8 @@ pub mod vigenere {
     pub fn key_len_score<T:Glyph>(ct:&[T],n:usize) -> Maybe<f64> {
         if n==0 {
             return Err(err::INVALID_INPUT);
-        } let shreds = ct.iter().unzipn(n);
-        if let Some(s) = shreds.into_iter().next() {
-            Ok(kappa(&s))
-        } else {
-            Err(err::MATHEMATICAL_PARADOX)
-        }
+        } let first_shred = ct.iter().first_shred_unzipn(n);
+        Ok(kappa(&first_shred))
     }
 
     pub fn likely_key_lengths<'a,T:'a+Glyph>
@@ -121,7 +118,7 @@ pub mod vigenere {
             }).into_iter()
             .map(|((l,_),_)| *l)
             .collect();
-       
+
         Ok(suggested_lengths)
     }
 
@@ -154,7 +151,8 @@ pub mod vigenere {
             (
                 ct.len() as f64
                 / uc
-            ).sqrt().floor() as usize;
+            ).floor() as usize;
+
         match res {
             0 => Err(err::NO_FEASIBLE_KEYLEN),
             _ => Ok(res)
@@ -172,14 +170,12 @@ pub mod vigenere {
                     > + 'a
                 >
     where T: Glyph, K: Glyph {
-        let max_feasible_keylen_performance = 
-            (10.0 / (ct.len() as f64*op)).floor() as usize;
-        let max_feasible_keylen_cryptographically = 
-            max_feasible_keylen(ct,ptspace,keyspace)?;
-        let max_checked_keylen = min(
-            max_feasible_keylen_cryptographically,
-            max_feasible_keylen_performance
-        );
+        let max_checked_keylen = 
+            min(
+                MAX_CHECKED_KEY_LEN_UPPER_BOUND,
+                max_feasible_keylen(ct,ptspace,keyspace)
+                .map_err(|_| err::IMPOSSIBLE_PARAMETERS)?
+            );
         let solutions = 
             likely_key_lengths(ct,max_checked_keylen)?
             .into_iter()
