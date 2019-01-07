@@ -1,7 +1,7 @@
 use utils;
 use utils::{Average,FMax,ZipN,UnzipN,xor,add,with_preceding_divisors,QuickUnique};
 use dist;
-use dist::{Prob,Distribution,binomial_p_estimate,kappa};
+use dist::{Prob,Distribution,binomial_p_estimate,kappa_confidence_interval};
 use dist::known::{SHAKESPEARE,UNIFORM};
 use crypto::{vigenere};
 use itertools::{iterate,assert_equal};
@@ -50,18 +50,6 @@ fn approx_kappa_test() {
         utils::approx_equal(
             ud.approx_kappa(),
             0.1
-        )
-    )
-}
-
-#[test]
-fn exact_kappa_test() {
-    let samples:Vec<usize> = 
-        iterate(0, |x| x+1).take(5).cycle().take(50).collect();
-    assert!(
-        utils::approx_equal(
-            kappa(&samples.iter()),
-            0.183_673_469_387_755
         )
     )
 }
@@ -193,8 +181,8 @@ fn full_break_base64_test() {
 fn binomial_p_estimate_test() {
     let trials = 50;
     let successes = 29;
-    let est_prob = binomial_p_estimate(trials,successes);
-    utils::approx_equal(est_prob, Prob(0.44));
+    let (prob_lower, prob_upper) = binomial_p_estimate(trials,successes);
+    utils::approx_equal(prob_lower, Prob(0.44));
 }
 
 #[test]

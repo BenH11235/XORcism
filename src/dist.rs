@@ -45,7 +45,7 @@ impl Prob {
     }
 }
 
-trait GetUnderlying<T> {
+pub trait GetUnderlying<T> {
     fn val(&self) -> T;
 }
 impl GetUnderlying<_Prob> for Prob {
@@ -62,19 +62,19 @@ impl Div<f64> for Prob {
     }
 }
 
-pub fn binomial_p_estimate(trials:usize, successes:usize) -> Prob {
+pub fn binomial_p_estimate(trials:usize, successes:usize) -> (Prob,Prob) {
     let zval = 1.96; //z value for 95% confidence interval
     let naive_p = successes as f64 / trials as f64;
-    Prob(
-        naive_p 
-        -zval 
+    let margin = 
+        zval 
         *(
             (
                 (naive_p * (1.0-naive_p))
                 /(trials as f64)
             ).sqrt()
-        )
-    )
+        );
+    (Prob(naive_p-margin), Prob(naive_p+margin))
+    
 }
 
 
@@ -145,7 +145,7 @@ pub trait Distribution<T:Glyph> {
 
 }
 
-pub fn kappa<'a,T:'a,IT>(v:&IT) -> f64 
+pub fn kappa_confidence_interval<'a,T:'a,IT>(v:&IT) -> (Prob,Prob) 
 where T:    Glyph,
       IT:   Iter<&'a T>
 {
@@ -161,8 +161,8 @@ where T:    Glyph,
         .fold((0,0), |(s,o),(_,n)| (s+n, o+pairs(*n)));
     let opportunities:usize = pairs(samples);
     match opportunities {
-        0 => f64::from(0), //fair enough value for this edge case
-        _ => binomial_p_estimate(opportunities,coincidences).val()
+        0 => (Prob(0.0),Prob(0.0)), //fair enough value for this edge case
+        _ => binomial_p_estimate(opportunities,coincidences)
     }
 }
 

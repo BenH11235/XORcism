@@ -25,7 +25,7 @@ pub mod vigenere {
     use utils::{Glyph,ZipN,UnzipN,FirstShredUnzipN,fcmp,with_preceding_divisors};
     use crypto::unicity_coefficient;
     use dist;
-    use dist::{Distribution,kappa};
+    use dist::{Distribution,GetUnderlying,kappa_confidence_interval};
     use rayon::prelude::*;
 
     //currently necessary for performance reasons
@@ -82,7 +82,8 @@ pub mod vigenere {
         if n==0 {
             return Err(err::INVALID_INPUT);
         } let first_shred = ct.iter().first_shred_unzipn(n);
-        Ok(kappa(&first_shred))
+        let (kappa_lower, kappa_upper) = kappa_confidence_interval(&first_shred);
+        Ok(kappa_lower.val())
     }
 
     pub fn likely_key_lengths<'a,T:'a+Glyph>
