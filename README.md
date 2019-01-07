@@ -81,6 +81,20 @@ The Vigenère cipher resisted decryption for hundreds of years, which earned it 
 
 Steps 2 and 4 are trivial, and do not involve any analysis; the cryptographic work is done in steps 1 and 3. 
 
+
+#### 4.1.1 "The largest kappa value"? Don't you mean the one closest to the plaintext distribution?
+
+Yes, in theory. The thing is, searching for the highest kappa will always work, AND will sometimes work when doing the theoretical "right thing" would have failed. 
+
+For sane input, partitioning with the correct key length will preserve the plaintext kappa, while partitioning with the wrong key length will, very probably, result in a lower value. This is why Kasiski's method works in the first place. So, we can expect a search for the highest kappa to work just as well as a search for the exact kappa, unless we're dealing with adverserial input (which we probably aren't, and this is out of scope, out damned spot, etc etc).
+
+Conversely, however, searching for the "correct kappa" will fail if we're convinced that the plaintext distribution has a higher kappa than it actually does. This can happen very easily, considering that we don't really know where the ciphertext even came from, and the "plaintext distribution" is, by necessity, an educated guess. 
+
+For example, the "Shakespeare" distribution used for breaking the pitch example and the "full break test" example has a kappa value of about 0.08, but the actual plaintexts have a kappa value of about 0.06. If we had insisted on an exact match for the kappa value, the decryption would fail. We could use a different distribution with an adjusted kappa value of 0.06, but then the plaintext might, unbeknownst to us, actually have a kappa of 0.04, and we're back where we started. 
+
+To sum it up, in this case there are strong theoretical reasons to do the theoretically incorrect thing, as it basically results in a free win. Somewhere a mathematician is crying.
+
+
 ## 4.2 Details of cryptanalysis
 
 ### 4.2.1 Recovering the key length
