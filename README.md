@@ -6,7 +6,35 @@ XORcism is a FOSS command-line tool that breaks "rotating xor" style ciphers. It
 
 ![XORcism output](https://raw.githubusercontent.com/BenH11235/XORcism/master/images/xorcism_bible.png)
 
-Xorcism supports both xor and modulo-2^32-addition based encryption. Support for modulo-947 multiplication can easily be added, if that sort of thing ever becomes popular. Usage is simple and blunt: `xorcism <INPUT_FILE>` works.
+Xorcism supports both xor and modulo-2^32-addition based encryption. Support for modulo-947 multiplication can easily be added, if that sort of thing ever becomes popular. 
+
+### Usage
+
+Basic CLI usage is simple and blunt: `xorcism <INPUT_FILE>` works. 
+
+To use xorcism as an external crate in your own project, decide if you trust this repository, and if you do then add the following under `[dependencies]` in your `Cargo.toml`:
+
+```toml
+xorcism = { git = "https://github.com/BenH11235/XORcism.git"}
+```
+
+Then you can do, for example:
+
+```rust
+extern crate xorcism;
+
+use xorcism::crypto::vigenere::{encrypt,decrypt};
+use xorcism::utils::xor;
+fn main() {
+    let pt = b"HELLOWORLD";
+    let key = b"key";
+    let ct = encrypt(pt,key,&xor);
+    let pt2 = decrypt(&ct,key,&xor);
+    println!("{}",String::from_utf8_lossy(&pt2));
+}
+```
+
+Note that this project has not yet been updated to support newer Rust editions, so opt out by deleting the appropriate line from your `Cargo.toml`.
 
 ## 0.1 The Anti-Pitch
 
