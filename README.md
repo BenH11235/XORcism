@@ -52,7 +52,7 @@ The method used is similar to the one used by the first person to ever break thi
 
 1. Pick maximum key length that still means ciphertext can be decrypted in theory (unicity distance) and won't take more than about 10 seconds for the entire decryption process
 2. Score key lengths using coincidence counting, using a 95% confidence interval score; penalize lengths for having a divisor with a high score
-3. Pick candidate key length _k_. Parition ciphertext into _k_ parts and brute-force each part assuming a single-character key, looking for the most likely candidate plaintext.
+3. Pick candidate key length $k$. Parition ciphertext into $k$ parts and brute-force each part assuming a single-character key, looking for the most likely candidate plaintext.
 4. Re-assemble the plaintexts into a large plaintext.
 5. If the end user is not satisfied with the result, try again for the next most highly scored key length.
 6. Repeat until out of key length, or user hits ctrl+C in anger.
@@ -68,7 +68,7 @@ This is a list of known ciphertexts that XORcism will fail to decipher.
 
 * Any ciphertext where the key size is over 1000, due to the stop-gap performance mitigations mentioned in section 4.2.1.3.
 
-* Tried to run XORcism on some ciphertext, didn't get the result you want? Contact us with the details, and we'll list it here.
+* Tried to run XORcism on some ciphertext, didn't get the result you want? Open an issue.
 
 
 # 2. Usage
@@ -107,14 +107,14 @@ ARGS:
 
 The modern rotating xor is a form of what's classically known as a "Vigenère cipher", after Blaise de Vigenère, a French cryptographer [who did not invent it](https://en.wikipedia.org/wiki/Stigler%27s_law_of_eponymy) in the 16th century. The cipher is described by the following formula:
 
-![equation](https://latex.codecogs.com/gif.latex?%5Ctext%7BEnc%7D%28%5Ctext%7Bkey%7D%2C%5Ctext%7Bplaintext%7D%29_%7Bi%7D%20%3D%20%5Ctext%7Bplaintext%7D_i%20%5Coplus%20key_%7Bi%20%5Cmod%20%7C%5Ctext%7Bkey%7D%7C%7D)
+$$\text{Enc}(k,p)_i = p_i \oplus k_{i \mod |k|}$$
 
-The use of the xor function is a modern artifact; the original version used some oldfangled function called a _tabula recta_ where English letters were treated as the numbers 0 to 25, and encryption was simple addition modulo 26. In truth, one can use any function _f(keychar,plaitextchar)_ with the property that _f(k,f(k,p))=p_, and the principle remains the same.
+The use of the xor function is a modern artifact; the original version used some oldfangled function called a _tabula recta_ where English letters were treated as the numbers 0 to 25, and encryption was simple addition modulo 26. In truth, one can use any function $f(\text{keychar},\text{plaintextchar})$ with the property that $f(k,f(k,p))=p$, and the principle remains the same.
 
 The Vigenère cipher resisted decryption for hundreds of years, which earned it the Bond villain nickname _le chiffre indéchiffrable_ (the unbreakable cipher). Finally, in 1863, German cryptographer Friedrich Kasiski produced a cryptanalysis for it. The cryptanalysis proceeds as follows:
 
-1. Figure out the key length _|k|_ using statistical properties of the ciphertext
-2. Partition the ciphertext into _|k|_ parts based on the key character that was used during encryption (so for instance, if the key is 4 characters long, it will be partitioned into 4 parts -- the first with indices 0, 4, 8...; the second with indices 1, 5, 9...; the third with indices 2, 6, 10...; and the fourth with indices 3, 7, 11...).
+1. Figure out the key length $|k|$ using statistical properties of the ciphertext
+2. Partition the ciphertext into $|k|$ parts based on the key character that was used during encryption (so for instance, if the key is 4 characters long, it will be partitioned into 4 parts -- the first with indices 0, 4, 8...; the second with indices 1, 5, 9...; the third with indices 2, 6, 10...; and the fourth with indices 3, 7, 11...).
 3. Cryptanalyze each part separately
 4. Re-assemble the cryptanalyzed parts
 
@@ -140,9 +140,9 @@ To sum it up, in this case there are strong theoretical reasons to do the theore
 
 Kasiski's original strategy was looking for repeated strings in the ciphertext. He reasoned correctly that if a string repeats in the ciphertext, this is probably a result of the same plaintext bytes being encrypted by the same key bytes, given that the alternative is an unlikely coincidence.
 
-A related, more modern method is guessing a key length _k_ and then examining the statistical properties of the individual partitions. If the key guess is correct, the partitions are expected to have statistical properties that they shouldn't otherwise. This is because every character in a given partition was encrypted with the same key character. 
+A related, more modern method is guessing a key length $k$ and then examining the statistical properties of the individual partitions. If the key guess is correct, the partitions are expected to have statistical properties that they shouldn't otherwise. This is because every character in a given partition was encrypted with the same key character. 
 
-To visualize this, consider the extreme case where we know that the original plaintext consisted of a single character, repeated 100 times. If we guess a key length of 4, and each of the resulting ciphertext partitions consists of a single character repeated 25 times, we are virtually certain that our key length guess was correct. The case where the plaintext character distribution is that of plain English is a less extreme variation of the same principle. Two letters picked at random out of _Lord of the Flies_ are not guaranteed to be the same, but are still much likelier than random to be the same (consider e.g. the much-better-than-random chance that we pick the pair (e,e)).
+To visualize this, consider the extreme case where we know that the original plaintext consisted of a single character, repeated 100 times. If we guess a key length of 4, and each of the resulting ciphertext partitions consists of a single character repeated 25 times, we are virtually certain that our key length guess was correct. The case where the plaintext character distribution is that of plain English is a less extreme variation of the same principle. Two letters picked at random out of _Lord of the Flies_ are not guaranteed to be the same, but are still much likelier than random to be the same (consider e.g. the much-better-than-random chance that we pick the pair $(e,e)$).
 
 A strategy therefore suggests itself: Iterate over all possible key lengths; count the number of "coincidences" in the resulting partitions -- pairs of letters which are the same; then choose the key length that produces the largest ratio of coincidences (this is called the "kappa value"). Given that this is widely known to be the correct solution to a solved problem, we expected to be left with strictly an implementation problem.
 
@@ -158,15 +158,16 @@ This is because coincidence counting is not a capital-S solution in the sense of
 
 Producing such a recipe is many times easier than producing a capital-S Solution to the standard of the quadratic formula, which is why you see so much more of the former than the latter. Take a second to think what such a solution to our problem would even look like. We imagine it'd be something like this: 
 
-> **Theorem:** Suppose that a ciphertext ![equation](https://latex.codecogs.com/gif.latex?C) is obtained by encrypting a plaintext with character distribution ![equation](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BP%7D) with properties _a,b,c_ and key character distribution ![equation](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BK%7D) with properties _k,l,m_. Suppose further that the ciphertext is partitioned into ![equation](https://latex.codecogs.com/gif.latex?%7CK%7C) parts, resulting in ![equation](https://latex.codecogs.com/gif.latex?n) coincidences. Then ![equation](https://latex.codecogs.com/gif.latex?%7CK%7C) is the correct key length with probability ![equation](https://latex.codecogs.com/gif.latex?p%20%5Cgeq%20%5Ctext%7Beye-straining%20formula%7D).
+> **Theorem:** Suppose that a ciphertext $C$ is obtained by encrypting a plaintext with character distribution $P$ with properties $a,b,c$ and key character distribution $K$ with properties $k,l,m$. Suppose further that the ciphertext is partitioned into $|K|$ parts, resulting in $n$ coincidences. Then $|K|$ is the correct key length with probability $p \geq \text{eye_straining_formula}$.
+>
 > **Proof:** ...
 
-One should stop to fully appreciate the huge gap between the original blithe suggestion of "hey, let's count coincidences" and the level of rigour described here. When we witnessed coincidence counting produce the wrong answer, it was an "oh, well" moment. If the hypothetical formula above had concluded that the wrong answer is correct with probability ![equation](https://latex.codecogs.com/gif.latex?p%20%5Cgeq%200.997), now _that_ would not have been an 'oh well' moment at all. This is the gap between _observing_ that something usually works and _knowing why_ it works.
+One should stop to fully appreciate the huge gap between the original blithe suggestion of "hey, let's count coincidences" and the level of rigour described here. When we witnessed coincidence counting produce the wrong answer, it was an "oh, well" moment. If the hypothetical formula above had concluded that the wrong answer is correct with probability $0.997$, now _that_ would not have been an 'oh well' moment at all. This is the gap between _observing_ that something usually works and _knowing why_ it works.
 
 In our case, to produce a truly rigorous solution, you'd have to tackle questions like:
 
-* How is the number of coincidences distributed? It's the sum of many trials with a known probability of success, but unfortunately it's not binomial, because the trials are not independent (e.g. if x=y, then x=z and y=z determine each other). In fact, it's none of your probability 101 distributions, and deriving it combinatorially from first principles appears to be not so easy.
-* Suppose we do figure out how the number of coincidences for a k-partition affects the probability that the k-partition is correct; what about the way it affects the probability that some j-partition is correct? What if j divides k? What if they are coprime?
+* How is the number of coincidences distributed? It's the sum of many trials with a known probability of success, but unfortunately it's not binomial, because the trials are not independent (e.g. if $x=y$, then $x=z$ and $y=z$ determine each other). In fact, it's none of your probability 101 distributions, and deriving it combinatorially from first principles appears to be not so easy.
+* Suppose we do figure out how the number of coincidences for a $k$-partition affects the probability that the $k$-partition is correct; what about the way it affects the probability that some $j$-partition is correct? What if $j$ divides $k$? What if they are coprime?
 
 Finally, even if we successfully answer all the above questions, it would not guarantee a probability of success for any _given_ ciphertext -- only in aggregate over the space of all ciphertexts, assuming a random choice (meaning, e.g., no guarantees for adverserial input). Further, we would still have no reason to believe that pairwise coincidence counting actually exhausts the information latent in the ciphertext, and gives the best guarantee possible. In fact, our mathematical intuition says that the opposite is true: ciphertexts exist for which coincidence counting will fail to reveal the correct key length, but a more involved analysis will succeed. We comfort ourselves by thinking of them as pathologies.
 
@@ -178,13 +179,13 @@ The result is not a capital-S Solution, but it seems to work well enough for at 
 
 #### 4.2.1.2 Mitigating the Mess of Malignant Multiples
 
-When naïve coincidence counting produced the wrong answer, we searched for clues in the actual coincidence ratios associated with each possible key length. The source of the problem became quickly apparent: the correct key length _k_ received a relatively high score, but so did _2k_, _3k_, and every multiple of _k_. Worse, the scores of multiples of _k_ were basically not distinguishable from those of the correct _k_, and would often be even higher. In retrospect, it's not too difficult to see why this happens: The partition you get from a guessed key length of (let's say) _3k_ is exactly the partition you get from guessing  _k_, only with each part broken into 3 smaller parts. Doing this shouldn't affect the ratio of coincidences (equal character pairs), since the smaller parts are still drawn from the same character distribution.
+When naïve coincidence counting produced the wrong answer, we searched for clues in the actual coincidence ratios associated with each possible key length. The source of the problem became quickly apparent: the correct key length $|k|$ received a relatively high score, but so did $2|k|$, $3|k|$, and every multiple of $|k|$. Worse, the scores of multiples of $k$ were basically not distinguishable from those of the correct $|k|$, and would often be even higher. In retrospect, it's not too difficult to see why this happens: The partition you get from a guessed key length of (let's say) $3|k|$ is exactly the partition you get from guessing  $|k|$, only with each part broken into 3 smaller parts. Doing this shouldn't affect the ratio of coincidences (equal character pairs), since the smaller parts are still drawn from the same character distribution.
 
-Our first idea was to narrow down the key length candidates to the top 10 "finalists" based on the best score, and return the minimum value among those, under the assumption that the finalists would be multiples of the correct _k_, so the minimal value would be the exact _k_. Unfortunately, we quickly discovered that for long enough ciphertexts, there were so many possible key lengths that the higher multiples of _k_ could hog the 10 finalists all to themselves, leaving the correct answer _k_ to wallow in obscurity. Conversely, for short enough ciphertexts, there were so few candidate key lengths that they would all become finalists, and the algorithm would gleefully declare "1" the winner, even if its score was very low compared to that of the correct _k_.
+Our first idea was to narrow down the key length candidates to the top 10 "finalists" based on the best score, and return the minimum value among those, under the assumption that the finalists would be multiples of the correct $|k|$, so the minimal value would be the exact $|k|$. Unfortunately, we quickly discovered that for long enough ciphertexts, there were so many possible key lengths that the higher multiples of $|k|$ could hog the 10 finalists all to themselves, leaving the correct answer $|k|$ to wallow in obscurity. Conversely, for short enough ciphertexts, there were so few candidate key lengths that they would all become finalists, and the algorithm would gleefully declare "1" the winner, even if its score was very low compared to that of the correct $|k|$.
 
 Disappointed with our original approach, we finally settled on the "shoo, you multiples and your coat-tail riding"(tm) algorithm:
-* For every possible key length _k_, let _coattails(k)_ be the number of possible key lengths _j_ such that _j_ divides _k_ and has a higher coincidence ratio than _k_
-* Iterate over possible key lengths in lexicographic order where coattails(k) takes precedence over _score(k)_, the fewer coattails the better 
+* For every possible key length $m$, let $\text{coattails}(m)$ be the number of possible key lengths $j$ such that $j$ divides $m$ and has a higher coincidence ratio than $m$
+* Iterate over possible key lengths in lexicographic order where $\text{coattails}(m)$ takes precedence over $\text{score}(m)$, the fewer coattails the better 
 * Ask for user feedback to determine whether to proceed to the next key length or not, based on the resulting decryption
 
 This seemed to be working well enough to counter the decoy multiples problem, so we left it alone.
@@ -199,7 +200,7 @@ We settled on an answer based on another crypto 101 concept: The _unicity distan
 
 As a stop-gap measure, we instructed the software to put a limit on the considered key lengths such that the computation time should not exceed about 10 seconds or so. This still allows successful analysis of cases with pretty long key lengths and ciphertexts, such as the 975-byte key in the pitch example (the hardcoded limit is currently 1000).
 
-Another issue we ran into when considering large key lengths is an issue of overfitting, where very large key lengths -- which partition the ciphertext into many short parts -- would get the best score. This was the fallout of an early optimization, where we would only check the kappa value of the first ciphertext part, with indices _0, |k|, 2|k|..._ (because we statistically expect it to be similar to the others). This means that you can game the ratio by choosing a very large key length _just right_, to score a precious coincidence out of 6 or 7 opportunities. When you check a large number of possible large key lengths, these candidates that "game the system" emerge naturally, and dominate the ranking.
+Another issue we ran into when considering large key lengths is an issue of overfitting, where very large key lengths -- which partition the ciphertext into many short parts -- would get the best score. This was the fallout of an early optimization, where we would only check the kappa value of the first ciphertext part, with indices $0, |k|, 2|k| \ldots$ (because we statistically expect it to be similar to the others). This means that you can game the ratio by choosing a very large key length _just right_, to score a precious coincidence out of 6 or 7 opportunities. When you check a large number of possible large key lengths, these candidates that "game the system" emerge naturally, and dominate the ranking.
 
 To mitigate _that_ issue, we elected to stop computing naïve ratios, and instead compute a [binomial proportion confidence interval](https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval) of 95% on the coincidence probability, based on the number of coincidences out of the number of opportunities for coincidence. Basically, we advanced up a level in Evan Miller's [Hierarchy of Wrong Ways to Compute an Average Rating](https://www.evanmiller.org/how-not-to-sort-by-average-rating.html). Now one fluke out of 4 opportunities did not get a better score than 99 positive hits out of 400 opportunities, and all was right with the world again.
 
