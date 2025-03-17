@@ -160,7 +160,7 @@ This is because coincidence counting is not a capital-S solution in the sense of
 
 Producing such a recipe is many times easier than producing a capital-S Solution to the standard of the quadratic formula, which is why you see so much more of the former than the latter. Take a second to think what such a solution to our problem would even look like. We imagine it'd be something like this: 
 
-> **Theorem:** Suppose that a ciphertext $C$ is obtained by encrypting a plaintext with character distribution $P$ with properties $a,b,c$ and key character distribution $K$ with properties $k,l,m$. Suppose further that the ciphertext is partitioned into $|K|$ parts, resulting in $n$ coincidences. Then $|K|$ is the correct key length with probability $p \geq \frac{\sqrt{\text{eye}}\log(\text{straining})}{\text{formula}^2}$.
+> **Theorem:** Suppose that a ciphertext $C$ is obtained by encrypting a plaintext with character distribution $P$ with properties $a,b,c$ and key character distribution $K$ with properties $k,l,m$. Suppose further that the ciphertext is partitioned into $|K|$ parts, resulting in $n$ coincidences. Then $|K|$ is the correct key length with probability $p \geq \frac{\sqrt{\text{eye}}(\text{straining})}{\text{formula}^2}$.
 >
 > **Proof:** ...
 
