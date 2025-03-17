@@ -42,6 +42,13 @@ pub fn args() -> ArgMatches<'static> {
             .possible_values(&comb::names())
             .default_value("xor")
         )
+        
+        .arg(Arg::with_name("interactive_mode")
+            .short("-n")
+            .long("--interactive-mode")
+            .help("Turns on interactive mode (suggests solutions and writes to output file)")
+            .takes_value(false) // flag does not take any value
+)
         .get_matches()
 }
 

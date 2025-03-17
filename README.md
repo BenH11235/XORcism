@@ -10,7 +10,7 @@ Xorcism supports both xor and modulo-2^32-addition based encryption. Support for
 
 ### Usage
 
-Basic CLI usage is simple and blunt: `xorcism <INPUT_FILE>` works. 
+Basic CLI usage is simple and blunt: `xorcism <INPUT_FILE>` will print the most likely decryption to stdout.
 
 To use xorcism as an external crate in your own project, decide if you trust this repository, and if you do then add the following under `[dependencies]` in your `Cargo.toml`:
 
@@ -68,17 +68,22 @@ This is a list of known ciphertexts that XORcism will fail to decipher.
 # 2. Usage
 
 ```
-xorcism [OPTIONS] <INPUT_FILE>
+USAGE:
+    xorcism [FLAGS] [OPTIONS] <INPUT_FILE>
 
 FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+    -h, --help                Prints help information
+    -n, --interactive-mode    Turns on interactive mode (suggests solutions and writes to output file)
+    -V, --version             Prints version information
 
 OPTIONS:
-    -c, --combination-function <COMB_FUNC>    Sets the assumed f where f(key_byte, plain_byte) = cipher_byte [default: xor]  [possible values: xor, add_mod_256]
-    -k, --key-distribution <KEY_DIST>         Sets the assumed distribution of the key characters [default: uniform] [possible values: shakespeare, base64, hex, uniform]
+    -c, --combination-function <COMB_FUNC>    Sets the assumed f where f(key_byte, plain_byte) = cipher_byte [default:
+                                              xor]  [possible values: xor, add_mod_256]
+    -k, --key-distribution <KEY_DIST>         Sets the assumed distribution of the key characters [default: uniform]
+                                              [possible values: shakespeare, base64, hex, uniform]
     -o, --output_file <OUTPUT_FILE>           Sets the output file to write to [default: xorcism.out]
-    -p, --plaintext-distribution <PT_DIST>    Sets the assumed distribution of the plaintext characters [default: shakespeare] [possible values: shakespeare, base64, hex, uniform]
+    -p, --plaintext-distribution <PT_DIST>    Sets the assumed distribution of the plaintext characters [default:
+                                              shakespeare]  [possible values: shakespeare, base64, hex, uniform]
 
 ARGS:
     <INPUT_FILE>    Sets the input file to use
@@ -205,5 +210,6 @@ Further, there is no functionality right now to ask the program to make another 
 
 ## 5. Contact details
 
-Twitter: @benherzog11235 
+Mastodon: @bh11235@infosec.exchange
+
 Mail: benhe@checkpoint.com
