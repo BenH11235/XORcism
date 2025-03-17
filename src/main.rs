@@ -39,10 +39,26 @@ fn main() -> Result<(),String> {
         Err("None of the proposed solutions were accepted.");
     let mut cmd: String = String::new();
 
-    let solutions = 
+    let mut solutions = 
         vigenere::full_break(&ciphertext, &pt_dist, &key_dist, &comb_func)
         .map_err(|e| format!("Failed to break ciphertext: {}", e))?
         .unique();
+
+    //Non Interactive Mode
+
+    if !args.is_present("interactive_mode") {
+        let proposed_solution = 
+            solutions
+            .next()
+            .ok_or(format!("No solutions found"))?
+            .map_err(|e| 
+                format!("Failed to compute possible solution: {}",e)
+            )?;
+        println!("{}", String::from_utf8_lossy(&proposed_solution));
+        return Ok(());
+    }
+
+    //Interactive mode
 
     let stdin = io::stdin();
     'choose_solution: for solution in solutions {
