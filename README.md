@@ -107,7 +107,7 @@ ARGS:
 
 The modern rotating xor is a form of what's classically known as a "Vigenère cipher", after Blaise de Vigenère, a French cryptographer [who did not invent it](https://en.wikipedia.org/wiki/Stigler%27s_law_of_eponymy) in the 16th century. The cipher is described by the following formula:
 
-$$\text{Enc}(k,p)_i = p_i \oplus k_{i \mod |k|}$$
+$$\text{Enc}(k,p)_i = p_i \oplus k_{i mod |k|}$$
 
 The use of the xor function is a modern artifact; the original version used some oldfangled function called a _tabula recta_ where English letters were treated as the numbers 0 to 25, and encryption was simple addition modulo 26. In truth, one can use any function $f(\text{keychar},\text{plaintextchar})$ with the property that $f(k,f(k,p))=p$, and the principle remains the same.
 
@@ -158,7 +158,7 @@ This is because coincidence counting is not a capital-S solution in the sense of
 
 Producing such a recipe is many times easier than producing a capital-S Solution to the standard of the quadratic formula, which is why you see so much more of the former than the latter. Take a second to think what such a solution to our problem would even look like. We imagine it'd be something like this: 
 
-> **Theorem:** Suppose that a ciphertext $C$ is obtained by encrypting a plaintext with character distribution $P$ with properties $a,b,c$ and key character distribution $K$ with properties $k,l,m$. Suppose further that the ciphertext is partitioned into $|K|$ parts, resulting in $n$ coincidences. Then $|K|$ is the correct key length with probability $p \geq \text{eye_straining_formula}$.
+> **Theorem:** Suppose that a ciphertext $C$ is obtained by encrypting a plaintext with character distribution $P$ with properties $a,b,c$ and key character distribution $K$ with properties $k,l,m$. Suppose further that the ciphertext is partitioned into $|K|$ parts, resulting in $n$ coincidences. Then $|K|$ is the correct key length with probability $p \geq \text{eye\_straining\_formula}$.
 >
 > **Proof:** ...
 
