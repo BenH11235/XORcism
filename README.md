@@ -9,7 +9,7 @@ Xorcism can operate in two modes:
 1. Simple, non-interactive mode (the default)
 ![XORcism demo - non interactive mode](images/demo_non_interactive.png)
 
-2. Interactive mode that proposed multiple solutions, in decreasing order of likelihood
+2. Interactive mode that proposes multiple solutions, in decreasing order of likelihood
 ![XORcism demo - interactive mode](images/demo_interactive.png)
 
 Xorcism supports both xor and modulo-2^32-addition based encryption. Support for modulo-947 multiplication can easily be added, if that sort of thing ever becomes popular. 
