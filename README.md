@@ -107,7 +107,9 @@ ARGS:
 
 The modern rotating xor is a form of what's classically known as a "Vigenère cipher", after Blaise de Vigenère, a French cryptographer [who did not invent it](https://en.wikipedia.org/wiki/Stigler%27s_law_of_eponymy) in the 16th century. The cipher is described by the following formula:
 
-$$\text{Enc}(k,p)_i = p_i \oplus k_{i mod |k|}$$
+```math
+\text{Enc}(k,p)_i = p_i \oplus k_{i mod |k|}
+```
 
 The use of the xor function is a modern artifact; the original version used some oldfangled function called a _tabula recta_ where English letters were treated as the numbers 0 to 25, and encryption was simple addition modulo 26. In truth, one can use any function $f(\text{keychar},\text{plaintextchar})$ with the property that $f(k,f(k,p))=p$, and the principle remains the same.
 
