@@ -3,6 +3,9 @@ name = "xorcism"
 version = "0.1.0"
 authors = ["Ben Herzog"]
 
+[target.x86_64-pc-windows-gnu]
+linker = "/usr/bin/x86_64-w64-mingw32-gcc"
+
 [dependencies]
 itertools = "0.7.3"
 counter = "0.4.3"
